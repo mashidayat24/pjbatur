@@ -1,0 +1,14 @@
+[
+    {
+        "nama": "Kopi Hitam",
+        "harga": 15000
+    },
+    {
+        "nama": "Teh Manis",
+        "harga": 10000
+    },
+    {
+        "nama": "Roti Bakar",
+        "harga": 12000
+    }
+]
