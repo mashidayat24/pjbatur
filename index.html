@@ -1,129 +1,213 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Search App</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <title>Database PDF PJ Batur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .pdf-container {
             height: 80vh;
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
             overflow: hidden;
+            background: #f8f9fa;
         }
         #pdf-viewer {
             width: 100%;
             height: 100%;
         }
+        .search-highlight {
+            background-color: #fef3cd;
+            font-weight: bold;
+        }
+        .pdf-icon {
+            background: linear-gradient(45deg, #dc2626, #ef4444);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
         <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">PDF Search Application</h1>
-            <p class="text-gray-600">Search and view PDF documents from the database</p>
+            <div class="mb-4">
+                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/557c3d97-92bd-40d4-bbe7-c79eb1398c3b.png" alt="Logo PJ Batur dengan design modern berwarna biru dan hijau" class="mx-auto rounded-full shadow-lg">
+            </div>
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Database PDF PJ Batur</h1>
+            <p class="text-gray-600 text-lg">Sistem Pencarian dan Tampilan Dokumen PDF</p>
         </header>
 
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <!-- Search Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div class="flex flex-col md:flex-row gap-4">
-                <input 
-                    type="text" 
-                    id="search-input" 
-                    placeholder="Search PDF files..." 
-                    class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <div class="flex-grow relative">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Cari nama file PDF..." 
+                        class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                    <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1fd4fdf5-b258-441c-9dee-5dc53df5212d.png" alt="Search icon magnifying glass" class="w-5 h-5">
+                    </div>
+                </div>
                 <button 
                     id="search-btn" 
-                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    class="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold shadow-md"
                 >
-                    Search
+                    Cari
                 </button>
-            </div>
-        </div>
-
-        <div id="results-container" class="mb-8 hidden">
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 class="text-lg font-semibold text-gray-800">Search Results</h2>
-                </div>
-                <ul id="results-list" class="divide-y divide-gray-200"></ul>
-            </div>
-        </div>
-
-        <div id="pdf-viewer-container" class="hidden">
-            <div class="flex items-center justify-between mb-4">
-                <h2 id="pdf-title" class="text-xl font-semibold text-gray-800"></h2>
                 <button 
-                    id="back-btn" 
-                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                    id="show-all-btn" 
+                    class="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-semibold shadow-md"
                 >
-                    Back to Results
+                    Tampilkan Semua
                 </button>
             </div>
-            <div class="pdf-container">
-                <iframe id="pdf-viewer" frameborder="0"></iframe>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">Mencari file PDF...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-container" class="mb-8 hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <span id="results-count">0</span> File Ditemukan
+                    </h2>
+                </div>
+                <div id="results-list" class="divide-y divide-gray-200 max-h-96 overflow-y-auto"></div>
             </div>
         </div>
+
+        <!-- PDF Viewer Section -->
+        <div id="pdf-viewer-container" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <div>
+                        <h2 id="pdf-title" class="text-xl font-semibold text-gray-800"></h2>
+                        <p id="pdf-info" class="text-sm text-gray-600 mt-1"></p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button 
+                            id="download-btn" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                        >
+                            Download
+                        </button>
+                        <button 
+                            id="back-btn" 
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                        >
+                            Kembali
+                        </button>
+                    </div>
+                </div>
+                <div class="pdf-container">
+                    <iframe id="pdf-viewer" frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-600">
+            <p>© 2024 PJ Batur. Database PDF System.</p>
+        </footer>
     </div>
 
     <script>
-        const githubRepo = 'mashidayat24/pjbatur';
-        const databaseFolder = 'database';
+        // Daftar file PDF yang tersedia (perlu diupdate sesuai file yang ada)
+        const pdfFiles = [
+            { name: "dokumen1.pdf", path: "database/dokumen1.pdf", description: "Dokumen Administrasi" },
+            { name: "laporan2024.pdf", path: "database/laporan2024.pdf", description: "Laporan Tahunan 2024" },
+            { name: "panduan.pdf", path: "database/panduan.pdf", description: "Panduan Penggunaan" },
+            { name: "peraturan.pdf", path: "database/peraturan.pdf", description: "Peraturan dan Ketentuan" },
+            { name: "data_keuangan.pdf", path: "database/data_keuangan.pdf", description: "Data Keuangan" },
+            { name: "rencana_kerja.pdf", path: "database/rencana_kerja.pdf", description: "Rencana Kerja" },
+            // Tambahkan file PDF lainnya sesuai kebutuhan
+        ];
 
+        // DOM elements
         const searchInput = document.getElementById('search-input');
         const searchBtn = document.getElementById('search-btn');
+        const showAllBtn = document.getElementById('show-all-btn');
+        const loading = document.getElementById('loading');
         const resultsContainer = document.getElementById('results-container');
         const resultsList = document.getElementById('results-list');
+        const resultsCount = document.getElementById('results-count');
         const pdfViewerContainer = document.getElementById('pdf-viewer-container');
         const pdfViewer = document.getElementById('pdf-viewer');
         const pdfTitle = document.getElementById('pdf-title');
+        const pdfInfo = document.getElementById('pdf-info');
         const backBtn = document.getElementById('back-btn');
+        const downloadBtn = document.getElementById('download-btn');
 
-        async function searchPDFs(query = '') {
-            try {
-                const response = await fetch(`https://api.github.com/repos/${githubRepo}/contents/${databaseFolder}`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch repository contents');
-                }
-                
-                const files = await response.json();
-                
-                const pdfFiles = files.filter(file => 
-                    file.name.toLowerCase().includes(query.toLowerCase()) && 
-                    file.name.toLowerCase().endsWith('.pdf')
-                );
-                
-                return pdfFiles;
-            } catch (error) {
-                console.error('Error searching PDFs:', error);
-                return [];
-            }
+        let currentPdfPath = '';
+
+        // Search function
+        function searchPDFs(query = '') {
+            const filteredFiles = pdfFiles.filter(file => 
+                file.name.toLowerCase().includes(query.toLowerCase()) ||
+                file.description.toLowerCase().includes(query.toLowerCase())
+            );
+            return filteredFiles;
         }
 
-        function displayResults(files) {
+        // Highlight search terms
+        function highlightText(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        // Display search results
+        function displayResults(files, query = '') {
             resultsList.innerHTML = '';
+            resultsCount.textContent = files.length;
             
             if (files.length === 0) {
-                resultsList.innerHTML = '<li class="px-6 py-4 text-gray-500">No PDF files found</li>';
+                resultsList.innerHTML = `
+                    <div class="px-6 py-8 text-center">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/df4e6a11-c9d9-49f1-be7c-c82bd49c3146.png" alt="No files found illustration with empty folder icon" class="mx-auto mb-4 opacity-50">
+                        <p class="text-gray-500 text-lg">Tidak ada file PDF ditemukan</p>
+                        <p class="text-gray-400 text-sm mt-2">Coba gunakan kata kunci yang berbeda</p>
+                    </div>
+                `;
                 return;
             }
             
-            files.forEach(file => {
-                const listItem = document.createElement('li');
-                listItem.className = 'px-6 py-4 hover:bg-gray-50 cursor-pointer';
+            files.forEach((file, index) => {
+                const listItem = document.createElement('div');
+                listItem.className = 'px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors';
                 listItem.innerHTML = `
                     <div class="flex items-center">
-                        <img 
-                            src="https://placehold.co/40" 
-                            alt="PDF document icon" 
-                            class="w-8 h-8 mr-3"
-                            onerror="this.src='https://placehold.co/40'"
-                        >
-                        <div>
-                            <h3 class="text-gray-800 font-medium">${file.name}</h3>
-                            <p class="text-sm text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
+                        <div class="pdf-icon w-12 h-12 rounded-lg mr-4 text-xs">
+                            PDF
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-gray-800 font-semibold text-lg">
+                                ${highlightText(file.name, query)}
+                            </h3>
+                            <p class="text-gray-600 text-sm mt-1">
+                                ${highlightText(file.description, query)}
+                            </p>
+                            <p class="text-gray-400 text-xs mt-1">
+                                Klik untuk melihat dokumen
+                            </p>
+                        </div>
+                        <div class="text-blue-600">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/48dd7ad3-81f2-447e-a937-77f50c8df896.png" alt="Arrow right icon pointing to the right" class="w-6 h-6">
                         </div>
                     </div>
                 `;
@@ -133,36 +217,101 @@
             });
         }
 
+        // View selected PDF
         function viewPDF(file) {
+            currentPdfPath = file.path;
             pdfTitle.textContent = file.name;
-            pdfViewer.src = `https://docs.google.com/gview?url=${file.download_url}&embedded=true`;
+            pdfInfo.textContent = file.description;
+            
+            // Using Google Docs Viewer for PDF display
+            pdfViewer.src = `https://docs.google.com/gview?url=${window.location.origin}/${file.path}&embedded=true`;
             
             resultsContainer.classList.add('hidden');
             pdfViewerContainer.classList.remove('hidden');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Back to results
         function backToResults() {
             pdfViewer.src = '';
+            currentPdfPath = '';
             resultsContainer.classList.remove('hidden');
             pdfViewerContainer.classList.add('hidden');
         }
 
-        searchBtn.addEventListener('click', async () => {
+        // Download PDF
+        function downloadPDF() {
+            if (currentPdfPath) {
+                const link = document.createElement('a');
+                link.href = currentPdfPath;
+                link.download = currentPdfPath.split('/').pop();
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Perform search
+        function performSearch() {
             const query = searchInput.value.trim();
-            const results = await searchPDFs(query);
             
-            displayResults(results);
-            resultsContainer.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
             pdfViewerContainer.classList.add('hidden');
-        });
+            
+            // Simulate loading delay
+            setTimeout(() => {
+                const results = searchPDFs(query);
+                displayResults(results, query);
+                
+                loading.classList.add('hidden');
+                resultsContainer.classList.remove('hidden');
+            }, 500);
+        }
+
+        // Show all files
+        function showAllFiles() {
+            searchInput.value = '';
+            
+            loading.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            pdfViewerContainer.classList.add('hidden');
+            
+            setTimeout(() => {
+                displayResults(pdfFiles);
+                loading.classList.add('hidden');
+                resultsContainer.classList.remove('hidden');
+            }, 300);
+        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', performSearch);
+        showAllBtn.addEventListener('click', showAllFiles);
+        backBtn.addEventListener('click', backToResults);
+        downloadBtn.addEventListener('click', downloadPDF);
         
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                searchBtn.click();
+                performSearch();
             }
         });
-        
-        backBtn.addEventListener('click', backToResults);
+
+        // Auto-suggest on input
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (query.length >= 2) {
+                const results = searchPDFs(query);
+                if (results.length > 0) {
+                    // Optional: show quick suggestions
+                }
+            }
+        });
+
+        // Initialize - show all files on load
+        window.addEventListener('load', showAllFiles);
     </script>
 </body>
 </html>
+
