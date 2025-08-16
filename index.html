@@ -377,6 +377,10 @@
             border-left: 4px solid #f39c12;
         }
         
+        .primary-info {
+            border-left: 4px solid #3498db;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -618,59 +622,72 @@
             
             let html = '';
             
-            // Combined fields groups
-            const combinedFields = [
-                {
-                    title: 'Informasi Lokasi',
-                    fields: ['alamat', 'desa', 'kecamatan'],
-                    className: 'location-combined'
-                },
-                {
-                    title: 'Informasi Tarif',
-                    fields: ['tarif', 'daya'],
-                    className: 'tariff-combined'
-                },
-                {
-                    title: 'Informasi Index',
-                    fields: ['tarif_index', 'unitup'],
-                    className: 'index-combined'
-                }
+            // Define the specific order for displaying details
+            const fieldOrder = [
+                { field: 'nama', label: 'Nama Pelanggan', className: 'primary-info' },
+                { field: 'alamat', label: 'Alamat', combined: ['alamat', 'desa', 'kecamatan'], className: 'location-combined' },
+                { field: 'idpel', label: 'ID Pelanggan', className: 'primary-info' },
+                { field: 'petugas', label: 'Petugas', className: 'primary-info' },
+                { field: 'nomer_meter_lama', label: 'Nomor Meter Lama', className: 'primary-info' },
+                { field: 'nomer_meter_baru', label: 'Nomor Meter Baru', className: 'primary-info' },
+                { field: 'tarif', label: 'Tarif & Daya', combined: ['tarif', 'daya'], className: 'tariff-combined' },
+                { field: 'tarif_index', label: 'Tarif Index & Unit UP', combined: ['tarif_index', 'unitup'], className: 'index-combined' }
             ];
             
-            // Process combined fields
-            combinedFields.forEach(group => {
-                const hasAnyData = group.fields.some(field => {
-                    const value = getFieldValue(rowData, field);
-                    return value && value !== 'Tidak ada data';
-                });
-                
-                if (hasAnyData) {
-                    html += `<div class="detail-item-combined ${group.className}">`;
-                    group.fields.forEach(field => {
+            const processedFields = [];
+            
+            // Process ordered fields
+            fieldOrder.forEach(item => {
+                if (item.combined) {
+                    // Handle combined fields
+                    const hasAnyData = item.combined.some(field => {
                         const value = getFieldValue(rowData, field);
-                        const displayField = csvHeaders.find(h => h.toLowerCase() === field.toLowerCase()) || field;
+                        return value && value !== 'Tidak ada data';
+                    });
+                    
+                    if (hasAnyData) {
+                        html += `<div class="detail-item-combined ${item.className}">`;
+                        item.combined.forEach(field => {
+                            const value = getFieldValue(rowData, field);
+                            const displayField = csvHeaders.find(h => h.toLowerCase() === field.toLowerCase()) || field;
+                            html += `
+                                <div class="detail-sub-item">
+                                    <div class="detail-label">${displayField}</div>
+                                    <div class="detail-value">${value}</div>
+                                </div>
+                            `;
+                            processedFields.push(field.toLowerCase());
+                        });
+                        html += '</div>';
+                    }
+                } else {
+                    // Handle single fields
+                    const value = getFieldValue(rowData, item.field);
+                    if (value && value !== 'Tidak ada data') {
+                        const displayField = csvHeaders.find(h => h.toLowerCase() === item.field.toLowerCase()) || item.label;
                         html += `
-                            <div class="detail-sub-item">
+                            <div class="detail-item ${item.className}">
                                 <div class="detail-label">${displayField}</div>
                                 <div class="detail-value">${value}</div>
                             </div>
                         `;
-                    });
-                    html += '</div>';
+                        processedFields.push(item.field.toLowerCase());
+                    }
                 }
             });
             
-            // Process remaining individual fields
-            const processedFields = ['alamat', 'desa', 'kecamatan', 'tarif', 'daya', 'tarif_index', 'unitup'];
+            // Process remaining fields that weren't in the ordered list
             csvHeaders.forEach(header => {
-                if (!processedFields.some(pf => pf.toLowerCase() === header.toLowerCase())) {
+                if (!processedFields.includes(header.toLowerCase())) {
                     const value = rowData[header] || 'Tidak ada data';
-                    html += `
-                        <div class="detail-item">
-                            <div class="detail-label">${header}</div>
-                            <div class="detail-value">${value}</div>
-                        </div>
-                    `;
+                    if (value && value !== 'Tidak ada data') {
+                        html += `
+                            <div class="detail-item">
+                                <div class="detail-label">${header}</div>
+                                <div class="detail-value">${value}</div>
+                            </div>
+                        `;
+                    }
                 }
             });
             
