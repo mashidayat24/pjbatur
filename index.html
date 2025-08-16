@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Search Viewer</title>
+    <title>PDF Database Search Viewer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
     <style>
         :root {
-            --primary-color: #4a6fa5;
-            --secondary-color: #166088;
-            --light-color: #e8f1f2;
-            --dark-color: #0d1b2a;
-            --accent-color: #5c9ead;
+            --primary-color: #2563eb;
+            --secondary-color: #1d4ed8;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --light-bg: #f8fafc;
+            --white: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
         * {
@@ -22,486 +29,463 @@
         }
         
         body {
-            background-color: var(--light-color);
-            color: var(--dark-color);
-            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
+            color: var(--text-primary);
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
         
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        .header {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
         }
         
-        h1 {
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 700;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
-        .search-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
+        .header p {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
         }
         
-        input[type="text"] {
-            flex-grow: 1;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        
-        button {
-            background-color: var(--secondary-color);
+        .database-info {
+            background: linear-gradient(135deg, var(--success-color), #059669);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
         }
         
-        button:hover {
-            background-color: var(--accent-color);
+        .database-info h3 {
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .search-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .search-input-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: var(--success-color);
+            color: var(--white);
+        }
+        
+        .btn-secondary:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background: var(--warning-color);
+            color: var(--white);
+        }
+        
+        .btn-warning:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+        
+        .search-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            background: var(--light-bg);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .stats-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            background: var(--white);
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .stats-value {
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 700;
         }
         
         .main-content {
-            display: flex;
+            display: grid;
+            grid-template-columns: 350px 1fr;
             gap: 20px;
-            height: calc(100vh - 220px);
+            height: calc(100vh - 320px);
         }
         
-        .file-list {
-            width: 300px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            overflow-y: auto;
-        }
-        
-        .file-list h2 {
-            margin-bottom: 15px;
-            color: var(--secondary-color);
-            border-bottom: 2px solid var(--light-color);
-            padding-bottom: 10px;
-        }
-        
-        .pdf-item {
-            padding: 10px;
-            margin-bottom: 8px;
-            background-color: var(--light-color);
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .pdf-item:hover {
-            background-color: var(--accent-color);
-            color: white;
-        }
-        
-        .pdf-item.selected {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-        
-        .pdf-viewer-container {
-            flex-grow: 1;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 15px;
+        .sidebar {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
             display: flex;
             flex-direction: column;
         }
         
-        .pdf-viewer {
-            flex-grow: 1;
-            border: 1px solid #ddd;
-            margin-top: 15px;
-            overflow: auto;
+        .sidebar h2 {
+            color: var(--primary-color);
+            margin-bottom: 16px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid var(--light-bg);
+            padding-bottom: 8px;
+        }
+        
+        .pdf-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-right: -8px;
+            padding-right: 8px;
+        }
+        
+        .pdf-item {
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
             position: relative;
         }
         
-        .pdf-document {
-            width: 100%;
+        .pdf-item:hover {
+            background: var(--accent-color);
+            color: var(--white);
+            transform: translateX(4px);
         }
         
-        .pdf-page {
-            margin-bottom: 20px;
+        .pdf-item.selected {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--secondary-color);
         }
         
-        .search-results {
-            margin-top: 15px;
-            max-height: 200px;
-            overflow-y: auto;
+        .pdf-item-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            word-break: break-word;
         }
         
-        .search-result-item {
-            padding: 8px;
-            margin-bottom: 5px;
-            background-color: #f8f8f8;
-            border-left: 3px solid var(--accent-color);
-            cursor: pointer;
+        .pdf-item-matches {
+            font-size: 12px;
+            opacity: 0.8;
         }
         
-        .search-result-item:hover {
-            background-color: #e5f3f7;
-        }
-        
-        .search-highlight {
-            background-color: yellow;
-        }
-        
-        .no-results {
-            color: #666;
+        .pdf-item-preview {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
             font-style: italic;
+            line-height: 1.3;
+        }
+        
+        .viewer-container {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--light-bg);
+        }
+        
+        .viewer-title {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+            word-break: break-word;
+        }
+        
+        .viewer-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .page-info {
+            background: var(--light-bg);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        
+        .pdf-viewer {
+            flex: 1;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            overflow: auto;
+            background: #f5f5f5;
+            position: relative;
+        }
+        
+        .pdf-canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: var(--text-secondary);
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: var(--text-secondary);
             text-align: center;
             padding: 20px;
         }
         
-        .file-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
+        .empty-state img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.5;
         }
         
-        @media (max-width: 768px) {
+        .search-highlight {
+            background: #ffeb3b;
+            padding: 1px 2px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+        
+        .highlight-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--success-color);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .database-path {
+            background: var(--light-bg);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 968px) {
             .main-content {
-                flex-direction: column;
+                grid-template-columns: 1fr;
                 height: auto;
             }
             
-            .file-list {
-                width: 100%;
-                max-height: 200px;
+            .sidebar {
+                max-height: 300px;
+            }
+            
+            .search-controls {
+                flex-direction: column;
+            }
+            
+            .search-stats {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>PDF Search Viewer</h1>
-            <p>Cari dan baca konten dari file PDF Anda</p>
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Cari teks dalam PDF...">
-                <button id="searchButton">Cari</button>
-                <button id="loadFilesButton">Pilih Folder PDF</button>
+        <header class="header">
+            <h1>PDF Database Search Viewer</h1>
+            <p>Pencarian otomatis dalam database PDF</p>
+            
+            <div class="database-info">
+                <h3>📁 Database PDF</h3>
+                <p>Sistem akan mencari semua file PDF dalam folder "database"</p>
+                <div class="database-path" id="databasePath">Folder: ./database/</div>
+            </div>
+            
+            <div class="search-controls">
+                <div class="search-input-container">
+                    <input type="text" id="searchInput" class="search-input" 
+                           placeholder="Masukkan kata kunci untuk mencari dalam database PDF...">
+                </div>
+                <button id="searchButton" class="btn btn-primary">
+                    🔍 Cari dalam Database
+                </button>
+                <button id="loadDatabaseButton" class="btn btn-secondary">
+                    📂 Pilih Folder Database
+                </button>
+                <button id="refreshButton" class="btn btn-warning">
+                    🔄 Refresh Database
+                </button>
+            </div>
+            
+            <div class="search-stats">
+                <div class="stats-item">
+                    <span class="stats-label">📄 Total PDF</span>
+                    <span class="stats-value" id="totalPdfCount">0</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">✅ Hasil Pencarian</span>
+                    <span class="stats-value" id="searchResultCount">0</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">⏱️ Status</span>
+                    <span class="stats-value" id="searchStatus">Siap</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">📊 Progress</span>
+                    <span class="stats-value" id="progressText">0%</span>
+                </div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
             </div>
         </header>
         
         <div class="main-content">
-            <div class="file-list">
-                <h2>Daftar File PDF</h2>
-                <div id="pdfList">
-                    <div class="no-results">Pilih folder yang berisi file PDF</div>
-                </div>
-            </div>
-            
-            <div class="pdf-viewer-container">
-                <h2 id="currentPdfTitle">PDF Viewer</h2>
-                <div class="file-actions">
-                    <div>
-                        <span id="pageInfo">Halaman: -/-</span>
-                    </div>
-                    <div>
-                        <button id="prevPage">Sebelumnya</button>
-                        <button id="nextPage">Selanjutnya</button>
-                    </div>
-                </div>
-                <div class="pdf-viewer" id="pdfViewer">
-                    <div class="no-results">Tidak ada PDF yang dipilih</div>
-                </div>
-                
-                <div id="searchResultsContainer" style="display: none;">
-                    <h3>Hasil Pencarian</h3>
-                    <div class="search-results" id="searchResults"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Inisialisasi PDF.js
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
-        
-        let pdfDocuments = [];
-        let currentPdf = null;
-        let currentPage = 1;
-        let searchResults = [];
-        let currentSearchIndex = -1;
-        let directoryHandle = null;
-        
-        // DOM Elements
-        const pdfListElement = document.getElementById('pdfList');
-        const pdfViewerElement = document.getElementById('pdfViewer');
-        const currentPdfTitleElement = document.getElementById('currentPdfTitle');
-        const pageInfoElement = document.getElementById('pageInfo');
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const loadFilesButton = document.getElementById('loadFilesButton');
-        const prevPageButton = document.getElementById('prevPage');
-        const nextPageButton = document.getElementById('nextPage');
-        const searchResultsContainer = document.getElementById('searchResultsContainer');
-        const searchResultsElement = document.getElementById('searchResults');
-        
-        // Event Listeners
-        loadFilesButton.addEventListener('click', async () => {
-            try {
-                directoryHandle = await window.showDirectoryPicker();
-                await loadPdfFiles();
-            } catch (error) {
-                console.error('Error accessing directory:', error);
-                alert('Gagal mengakses folder. Pastikan browser mendukung fitur ini dan Anda memberikan izin yang diperlukan.');
-            }
-        });
-        
-        searchButton.addEventListener('click', () => {
-            const searchTerm = searchInput.value.trim();
-            if (searchTerm && currentPdf) {
-                searchInPdf(searchTerm);
-            }
-        });
-        
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const searchTerm = searchInput.value.trim();
-                if (searchTerm && currentPdf) {
-                    searchInPdf(searchTerm);
-                }
-            }
-        });
-        
-        prevPageButton.addEventListener('click', () => {
-            if (currentPdf && currentPage > 1) {
-                currentPage--;
-                renderPage();
-                updatePageInfo();
-            }
-        });
-        
-        nextPageButton.addEventListener('click', () => {
-            if (currentPdf && currentPage < currentPdf.numPages) {
-                currentPage++;
-                renderPage();
-                updatePageInfo();
-            }
-        });
-        
-        // Functions
-        async function loadPdfFiles() {
-            pdfDocuments = [];
-            pdfListElement.innerHTML = '';
-            
-            try {
-                for await (const entry of directoryHandle.values()) {
-                    if (entry.name.endsWith('.pdf')) {
-                        const fileHandle = entry;
-                        const file = await fileHandle.getFile();
-                        
-                        const reader = new FileReader();
-                        reader.onload = async function(e) {
-                            try {
-                                const typedArray = new Uint8Array(e.target.result);
-                                const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
-                                
-                                pdfDocuments.push({
-                                    name: entry.name,
-                                    handle: fileHandle,
-                                    pdfDoc: pdfDoc
-                                });
-                                
-                                renderPdfList();
-                            } catch (error) {
-                                console.error('Error loading PDF:', error);
-                            }
-                        };
-                        reader.readAsArrayBuffer(file);
-                    }
-                }
-            } catch (error) {
-                console.error('Error reading directory:', error);
-            }
-        }
-        
-        function renderPdfList() {
-            if (pdfDocuments.length === 0) {
-                pdfListElement.innerHTML = '<div class="no-results">Tidak ada file PDF yang ditemukan</div>';
-                return;
-            }
-            
-            pdfListElement.innerHTML = '';
-            pdfDocuments.forEach((pdfDoc, index) => {
-                const pdfItem = document.createElement('div');
-                pdfItem.className = 'pdf-item';
-                pdfItem.textContent = pdfDoc.name;
-                pdfItem.addEventListener('click', () => {
-                    document.querySelectorAll('.pdf-item').forEach(item => {
-                        item.classList.remove('selected');
-                    });
-                    pdfItem.classList.add('selected');
-                    loadPdf(pdfDoc);
-                });
-                pdfListElement.appendChild(pdfItem);
-            });
-        }
-        
-        async function loadPdf(pdfDoc) {
-            try {
-                currentPdf = pdfDoc.pdfDoc;
-                currentPage = 1;
-                currentPdfTitleElement.textContent = pdfDoc.name;
-                updatePageInfo();
-                await renderPage();
-                searchResultsContainer.style.display = 'none';
-            } catch (error) {
-                console.error('Error loading PDF:', error);
-                pdfViewerElement.innerHTML = '<div class="no-results">Gagal memuat PDF</div>';
-            }
-        }
-        
-        async function renderPage() {
-            if (!currentPdf) return;
-            
-            try {
-                const page = await currentPdf.getPage(currentPage);
-                const viewport = page.getViewport({ scale: 1.0 });
-                
-                // Adjust scale to fit width
-                const scale = pdfViewerElement.clientWidth / viewport.width;
-                const scaledViewport = page.getViewport({ scale });
-                
-                pdfViewerElement.innerHTML = '';
-                
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = scaledViewport.height;
-                canvas.width = scaledViewport.width;
-                pdfViewerElement.appendChild(canvas);
-                
-                await page.render({
-                    canvasContext: context,
-                    viewport: scaledViewport
-                }).promise;
-            } catch (error) {
-                console.error('Error rendering page:', error);
-                pdfViewerElement.innerHTML = '<div class="no-results">Gagal merender halaman PDF</div>';
-            }
-        }
-        
-        function updatePageInfo() {
-            if (currentPdf) {
-                pageInfoElement.textContent = `Halaman: ${currentPage}/${currentPdf.numPages}`;
-            } else {
-                pageInfoElement.textContent = 'Halaman: -/-';
-            }
-        }
-        
-        async function searchInPdf(searchTerm) {
-            if (!currentPdf) return;
-            
-            searchResults = [];
-            searchResultsElement.innerHTML = '';
-            searchResultsContainer.style.display = 'block';
-            
-            try {
-                // Search in all pages
-                for (let i = 1; i <= currentPdf.numPages; i++) {
-                    const page = await currentPdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const text = textContent.items.map(item => item.str).join(' ');
-                    
-                    if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
-                        // Find all occurrences
-                        const regex = new RegExp(searchTerm, 'gi');
-                        let match;
-                        while ((match = regex.exec(text)) !== null) {
-                            searchResults.push({
-                                page: i,
-                                position: match.index,
-                                text: match[0]
-                            });
-                        }
-                    }
-                }
-                
-                if (searchResults.length === 0) {
-                    searchResultsElement.innerHTML = '<div class="no-results">Tidak ditemukan hasil pencarian</div>';
-                    return;
-                }
-                
-                // Display search results
-                searchResults.forEach((result, index) => {
-                    const resultItem = document.createElement('div');
-                    resultItem.className = 'search-result-item';
-                    
-                    const previewText = result.position < 20 
-                        ? `..."${result.text}"` + result.text.substr(20, 50) + "..."
-                        : "..." + text.substr(result.position - 20, 50) + `"${result.text}"` + "...";
-                    
-                    resultItem.innerHTML = `
-                        <strong>Halaman ${result.page}:</strong> ${previewText}
-                    `;
-                    
-                    resultItem.addEventListener('click', () => {
-                        currentPage = result.page;
-                        renderPage();
-                        updatePageInfo();
-                        highlightSearchTerm(searchTerm);
-                        currentSearchIndex = index;
-                        scrollToHighlight();
-                    });
-                    
-                    searchResultsElement.appendChild(resultItem);
-                });
-                
-            } catch (error) {
-                console.error('Error searching PDF:', error);
-                searchResultsElement.innerHTML = '<div class="no-results">Gagal melakukan pencarian</div>';
-            }
-        }
-        
-        function highlightSearchTerm(term) {
-            if (!currentPdf) return;
-            
-            const textDivs = pdfViewerElement.querySelectorAll('.textLayer div');
-            const regex = new RegExp(term, 'gi');
-            
-            textDivs.forEach(div => {
-                const text = div.textContent;
-                if (text.match(regex)) {
-                    div.innerHTML = text.replace(regex, match => 
-                        `<span class="search-highlight">${match}</span>`
-                    );
-                }
-            });
-        }
-        
-        function scrollToHighlight() {
-            const highlights = pdfViewerElement.querySelectorAll('.search-highlight');
-            if (highlights.length > 0 && currentSearchIndex >= 0 && currentSearchIndex < highlights.length) {
-                highlights[currentSearchIndex].scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-            }
-        }
-    </script>
-</body>
-</html>
-
+            <aside class="sidebar">
+                <h2>PDF Database Results</h2>
+                <div class="pdf-list" id="p
