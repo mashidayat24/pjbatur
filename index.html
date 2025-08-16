@@ -1,131 +1,280 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Pencarian Data</title>
+    <title>Sistem Pencarian Data VKRN</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
+            box-sizing: border-box;
         }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
         
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
         header {
-            background-color: #3498db;
-            color: white;
-            padding: 20px 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: #333;
+            padding: 30px 0;
             text-align: center;
-            border-radius: 5px 5px 0 0;
+            border-radius: 15px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
         }
         
         h1 {
-            margin: 0;
-            font-size: 28px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 400;
         }
         
         .search-section {
-            background-color: white;
-            padding: 25px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            margin-bottom: 30px;
         }
         
         .search-form {
             display: flex;
-            gap: 10px;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
         }
         
         .search-input {
             flex-grow: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            min-width: 300px;
+            padding: 15px 20px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
             font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
         .search-button {
-            background-color: #2ecc71;
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 15px 30px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 16px;
-            transition: background-color 0.3s;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
         }
         
         .search-button:hover {
-            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .results-section {
-            background-color: white;
-            padding: 25px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            display: none;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .results-title {
-            margin-top: 0;
-            color: #3498db;
-            font-size: 20px;
+            color: #333;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .results-count {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
         
         .results-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-        }
-        
-        .results-table th, 
-        .results-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
         .results-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .results-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.95rem;
         }
         
         .results-table tr:hover {
-            background-color: #f9f9f9;
+            background-color: #f8f9ff;
+        }
+        
+        .results-table tr:last-child td {
+            border-bottom: none;
         }
         
         .no-results {
             text-align: center;
-            color: #777;
-            padding: 20px;
-            font-style: italic;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .no-results-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
         }
         
         .loading {
             text-align: center;
-            padding: 20px;
-            color: #777;
+            padding: 60px 20px;
+            color: #666;
         }
         
-        @media (max-width: 600px) {
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #c33;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
             .search-form {
                 flex-direction: column;
             }
             
-            .search-input,
+            .search-input {
+                min-width: auto;
+                width: 100%;
+            }
+            
             .search-button {
                 width: 100%;
+            }
+            
+            .results-table {
+                font-size: 0.8rem;
+            }
+            
+            .results-table th,
+            .results-table td {
+                padding: 10px 12px;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .search-section,
+            .results-section {
+                padding: 20px;
+            }
+            
+            .results-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
             }
         }
     </style>
@@ -133,18 +282,24 @@
 <body>
     <div class="container">
         <header>
-            <h1>SISTEM PENCARIAN DATA</h1>
+            <h1>SISTEM PENCARIAN DATA VKRN</h1>
+            <p class="subtitle">Pencarian Data CSV dengan Filter Real-time</p>
         </header>
         
         <div class="search-section">
             <div class="search-form">
                 <input type="text" class="search-input" placeholder="Masukkan kata kunci pencarian..." id="searchQuery">
-                <button class="search-button" id="searchButton">Cari</button>
+                <button class="search-button" id="searchButton">
+                    <span id="buttonText">Cari Data</span>
+                </button>
             </div>
         </div>
         
-        <div class="results-section" id="resultsSection" style="display: none;">
-            <h2 class="results-title">Hasil Pencarian</h2>
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2 class="results-title">Hasil Pencarian</h2>
+                <div class="results-count" id="resultsCount">0 data ditemukan</div>
+            </div>
             <div class="results-container" id="resultsContainer">
                 <!-- Hasil akan ditampilkan disini -->
             </div>
@@ -152,54 +307,204 @@
     </div>
 
     <script>
-        document.getElementById('searchButton').addEventListener('click', function() {
-            const query = document.getElementById('searchQuery').value.trim().toLowerCase();
-            const resultsSection = document.getElementById('resultsSection');
-            const resultsContainer = document.getElementById('resultsContainer');
+        let csvData = [];
+        let csvHeaders = [];
+        
+        // Function to parse CSV
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+            const data = [];
             
-            // Menampilkan loading
-            resultsContainer.innerHTML = '<div class="loading">Memuat hasil pencarian...</div>';
+            for (let i = 1; i < lines.length; i++) {
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim().replace(/"/g, ''));
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim().replace(/"/g, ''));
+                
+                if (values.length === headers.length) {
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+                    data.push(row);
+                }
+            }
+            
+            return { headers, data };
+        }
+        
+        // Function to load CSV data
+        async function loadCSVData() {
+            try {
+                const response = await fetch('vkrn.csv');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const text = await response.text();
+                const parsed = parseCSV(text);
+                csvHeaders = parsed.headers;
+                csvData = parsed.data;
+                
+                console.log('Data loaded successfully:', csvData.length, 'rows');
+                document.getElementById('searchButton').disabled = false;
+                document.getElementById('buttonText').textContent = 'Cari Data';
+            } catch (error) {
+                console.error('Error loading CSV:', error);
+                showError('Gagal memuat file vkrn.csv. Pastikan file berada di folder yang sama.');
+            }
+        }
+        
+        // Function to show error
+        function showError(message) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `<div class="error-message">${message}</div>`;
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+        
+        // Function to highlight search terms
+        function highlightText(text, query) {
+            if (!query || !text) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.toString().replace(regex, '<span class="highlight">$1</span>');
+        }
+        
+        // Function to search data
+        function searchData(query) {
+            if (!query) return csvData;
+            
+            const lowerQuery = query.toLowerCase();
+            return csvData.filter(row => {
+                return Object.values(row).some(value => 
+                    value.toString().toLowerCase().includes(lowerQuery)
+                );
+            });
+        }
+        
+        // Function to display results
+        function displayResults(data, query) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsCount = document.getElementById('resultsCount');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            resultsCount.textContent = `${data.length} data ditemukan`;
             resultsSection.style.display = 'block';
             
-            // Simulasi loading
-            setTimeout(function() {
-                // Load data dari CSV (dalam contoh ini kita buat dummy data)
-                // Pada implementasi nyata, Anda perlu memproses file vkrn.csv yang sebenarnya
-                const dummyData = [
-                    { id: 1, nama: 'Data Pertama', deskripsi: 'Ini adalah deskripsi data pertama', tanggal: '2023-01-01' },
-                    { id: 2, nama: 'Data Kedua', deskripsi: 'Ini adalah deskripsi data kedua', tanggal: '2023-01-02' },
-                    { id: 3, nama: 'Data Ketiga', deskripsi: 'Ini adalah deskripsi data ketiga', tanggal: '2023-01-03' }
-                ];
+            if (data.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h3>Tidak ada data yang ditemukan</h3>
+                        <p>Coba gunakan kata kunci yang berbeda</p>
+                    </div>
+                `;
+            } else {
+                let html = '<table class="results-table">';
+                html += '<thead><tr>';
                 
-                // Filter data berdasarkan query
-                const filteredData = dummyData.filter(item => 
-                    item.nama.toLowerCase().includes(query) || 
-                    item.deskripsi.toLowerCase().includes(query) ||
-                    item.tanggal.includes(query)
-                );
+                csvHeaders.forEach(header => {
+                    html += `<th>${header}</th>`;
+                });
                 
-                // Tampilkan hasil
-                if (filteredData.length > 0) {
-                    let html = '<table class="results-table">';
-                    html += '<thead><tr><th>ID</th><th>Nama</th><th>Deskripsi</th><th>Tanggal</th></tr></thead>';
-                    html += '<tbody>';
-                    
-                    filteredData.forEach(item => {
-                        html += `<tr>
-                            <td>${item.id}</td>
-                            <td>${item.nama}</td>
-                            <td>${item.deskripsi}</td>
-                            <td>${item.tanggal}</td>
-                        </tr>`;
+                html += '</tr></thead><tbody>';
+                
+                data.forEach(row => {
+                    html += '<tr>';
+                    csvHeaders.forEach(header => {
+                        const cellValue = row[header] || '';
+                        const highlightedValue = query ? highlightText(cellValue, query) : cellValue;
+                        html += `<td>${highlightedValue}</td>`;
                     });
-                    
-                    html += '</tbody></table>';
-                    resultsContainer.innerHTML = html;
-                } else {
-                    resultsContainer.innerHTML = '<div class="no-results">Data tidak ditemukan untuk pencarian: ' + query + '</div>';
-                }
-            }, 1000);
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                resultsContainer.innerHTML = html;
+            }
+            
+            // Clear the search input after displaying results for next search
+            document.getElementById('searchQuery').value = '';
+            
+            // Focus back to search input for next search
+            document.getElementById('searchQuery').focus();
+        }
+        
+        // Function to show loading
+        function showLoading() {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            resultsContainer.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Mencari data...</p>
+                </div>
+            `;
+            resultsSection.style.display = 'block';
+        }
+        
+        // Event listeners
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const searchInput = document.getElementById('searchQuery');
+            const query = searchInput.value.trim();
+            
+            if (csvData.length === 0) {
+                showError('Data belum dimuat. Silakan refresh halaman.');
+                return;
+            }
+            
+            if (!query) {
+                alert('Silakan masukkan kata kunci pencarian');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate loading delay for better UX
+            setTimeout(() => {
+                const results = searchData(query);
+                displayResults(results, query);
+            }, 500);
+        });
+        
+        // Search on Enter key press
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchButton').click();
+            }
+        });
+        
+        // Real-time search (optional - uncomment to enable)
+        /*
+        document.getElementById('searchQuery').addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length >= 2) {
+                const results = searchData(query);
+                displayResults(results, query);
+            }
+        });
+        */
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('searchButton').disabled = true;
+            document.getElementById('buttonText').textContent = 'Memuat Data...';
+            loadCSVData();
         });
     </script>
 </body>
 </html>
+
