@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -144,6 +143,17 @@
             font-weight: 500;
         }
         
+        .click-hint {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-align: center;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        
         .results-table {
             width: 100%;
             border-collapse: collapse;
@@ -173,6 +183,13 @@
         
         .results-table tr:hover {
             background-color: #f8f9ff;
+            cursor: pointer;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+        
+        .results-table tbody tr {
+            transition: all 0.2s ease;
         }
         
         .results-table tr:last-child td {
@@ -228,6 +245,120 @@
             font-weight: bold;
         }
         
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+            backdrop-filter: blur(10px);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .close:hover {
+            color: #f0f0f0;
+            transform: scale(1.1);
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .detail-grid {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .detail-item {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .detail-item:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateX(5px);
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            color: #555;
+            font-size: 1rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -263,6 +394,24 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                max-height: 85vh;
+            }
+            
+            .modal-header {
+                padding: 15px 20px;
+            }
+            
+            .modal-title {
+                font-size: 1.2rem;
+            }
+            
+            .modal-body {
+                padding: 20px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -275,6 +424,11 @@
                 display: block;
                 overflow-x: auto;
                 white-space: nowrap;
+            }
+            
+            .modal-content {
+                width: 98%;
+                margin: 5% auto;
             }
         }
     </style>
@@ -300,8 +454,26 @@
                 <h2 class="results-title">Hasil Pencarian</h2>
                 <div class="results-count" id="resultsCount">0 data ditemukan</div>
             </div>
+            <div class="click-hint" id="clickHint" style="display: none;">
+                💡 Klik pada baris tabel untuk melihat detail lengkap data
+            </div>
             <div class="results-container" id="resultsContainer">
                 <!-- Hasil akan ditampilkan disini -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for displaying details -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Detail Data</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid" id="detailContent">
+                    <!-- Detail content will be inserted here -->
+                </div>
             </div>
         </div>
     </div>
@@ -394,16 +566,48 @@
             });
         }
         
+        // Function to show detail modal
+        function showDetailModal(rowData) {
+            const modal = document.getElementById('detailModal');
+            const detailContent = document.getElementById('detailContent');
+            
+            let html = '';
+            csvHeaders.forEach(header => {
+                const value = rowData[header] || 'Tidak ada data';
+                html += `
+                    <div class="detail-item">
+                        <div class="detail-label">${header}</div>
+                        <div class="detail-value">${value}</div>
+                    </div>
+                `;
+            });
+            
+            detailContent.innerHTML = html;
+            modal.style.display = 'block';
+            
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Function to close modal
+        function closeModal() {
+            const modal = document.getElementById('detailModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
         // Function to display results
         function displayResults(data, query) {
             const resultsContainer = document.getElementById('resultsContainer');
             const resultsCount = document.getElementById('resultsCount');
             const resultsSection = document.getElementById('resultsSection');
+            const clickHint = document.getElementById('clickHint');
             
             resultsCount.textContent = `${data.length} data ditemukan`;
             resultsSection.style.display = 'block';
             
             if (data.length === 0) {
+                clickHint.style.display = 'none';
                 resultsContainer.innerHTML = `
                     <div class="no-results">
                         <div class="no-results-icon">🔍</div>
@@ -412,6 +616,7 @@
                     </div>
                 `;
             } else {
+                clickHint.style.display = 'block';
                 let html = '<table class="results-table">';
                 html += '<thead><tr>';
                 
@@ -421,8 +626,8 @@
                 
                 html += '</tr></thead><tbody>';
                 
-                data.forEach(row => {
-                    html += '<tr>';
+                data.forEach((row, index) => {
+                    html += `<tr onclick="showDetailModal(${JSON.stringify(row).replace(/"/g, '&quot;')})">`;
                     csvHeaders.forEach(header => {
                         const cellValue = row[header] || '';
                         const highlightedValue = query ? highlightText(cellValue, query) : cellValue;
@@ -433,6 +638,9 @@
                 
                 html += '</tbody></table>';
                 resultsContainer.innerHTML = html;
+                
+                // Store data for click events (alternative approach)
+                resultsContainer.dataset.searchResults = JSON.stringify(data);
             }
             
             // Clear the search input after displaying results for next search
@@ -446,7 +654,9 @@
         function showLoading() {
             const resultsContainer = document.getElementById('resultsContainer');
             const resultsSection = document.getElementById('resultsSection');
+            const clickHint = document.getElementById('clickHint');
             
+            clickHint.style.display = 'none';
             resultsContainer.innerHTML = `
                 <div class="loading">
                     <div class="loading-spinner"></div>
@@ -487,16 +697,35 @@
             }
         });
         
-        // Real-time search (optional - uncomment to enable)
-        /*
-        document.getElementById('searchQuery').addEventListener('input', function() {
-            const query = this.value.trim();
-            if (query.length >= 2) {
-                const results = searchData(query);
-                displayResults(results, query);
+        // Modal event listeners
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('detailModal');
+            if (event.target === modal) {
+                closeModal();
             }
         });
-        */
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // Alternative approach for row click events using event delegation
+        document.getElementById('resultsContainer').addEventListener('click', function(e) {
+            const row = e.target.closest('tr');
+            if (row && row.parentElement.tagName === 'TBODY') {
+                const rowIndex = Array.from(row.parentElement.children).indexOf(row);
+                const searchResults = JSON.parse(this.dataset.searchResults || '[]');
+                if (searchResults[rowIndex]) {
+                    showDetailModal(searchResults[rowIndex]);
+                }
+            }
+        });
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
