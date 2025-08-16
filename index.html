@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Pencarian Data VKRN</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -153,6 +154,40 @@
             margin-bottom: 15px;
             text-align: center;
             border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .pdf-actions {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+        
+        .pdf-button {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .pdf-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
+        }
+        
+        .pdf-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .results-table {
@@ -381,6 +416,93 @@
             border-left: 4px solid #3498db;
         }
         
+        /* PDF Modal Styles */
+        .pdf-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .pdf-modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 95%;
+            max-width: 900px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .pdf-modal-header {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pdf-viewer-container {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            background: #f5f5f5;
+        }
+        
+        .pdf-canvas {
+            display: block;
+            margin: 0 auto 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pdf-controls {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .pdf-nav-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        
+        .pdf-nav-button:hover:not(:disabled) {
+            background: #5a6fd8;
+        }
+        
+        .pdf-nav-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .pdf-page-info {
+            color: #666;
+            font-size: 14px;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -454,6 +576,17 @@
             .detail-item-combined {
                 grid-template-columns: 1fr;
             }
+            
+            .pdf-modal-content {
+                width: 98%;
+                height: 95vh;
+                margin: 1% auto;
+            }
+            
+            .pdf-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -499,6 +632,10 @@
             <div class="click-hint" id="clickHint" style="display: none;">
                 💡 Klik pada baris tabel untuk melihat detail lengkap data
             </div>
+            <div class="pdf-actions" id="pdfActions" style="display: none;">
+                <div style="margin-bottom: 10px;">📄 Tampilkan dokumen PDF berdasarkan IDPEL dari hasil pencarian</div>
+                <button class="pdf-button" id="showPdfButton">Tampilkan PDF</button>
+            </div>
             <div class="results-container" id="resultsContainer">
                 <!-- Hasil akan ditampilkan disini -->
             </div>
@@ -520,9 +657,36 @@
         </div>
     </div>
 
+    <!-- PDF Modal -->
+    <div id="pdfModal" class="pdf-modal">
+        <div class="pdf-modal-content">
+            <div class="pdf-modal-header">
+                <h2 class="modal-title" id="pdfModalTitle">Dokumen PDF</h2>
+                <span class="close" id="closePdfModal">&times;</span>
+            </div>
+            <div class="pdf-viewer-container" id="pdfViewerContainer">
+                <div id="pdfLoadingMessage" class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Memuat dokumen PDF...</p>
+                </div>
+            </div>
+            <div class="pdf-controls" id="pdfControls" style="display: none;">
+                <button class="pdf-nav-button" id="prevPageBtn">Halaman Sebelumnya</button>
+                <span class="pdf-page-info" id="pageInfo">Halaman 1 dari 1</span>
+                <button class="pdf-nav-button" id="nextPageBtn">Halaman Selanjutnya</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let csvData = [];
         let csvHeaders = [];
+        let currentSearchResults = [];
+        let currentPdfDoc = null;
+        let currentPage = 1;
+        
+        // Set PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         
         // Function to parse CSV
         function parseCSV(text) {
@@ -559,6 +723,18 @@
             }
             
             return { headers, data };
+        }
+        
+        // Function to hide keyboard (blur active element)
+        function hideKeyboard() {
+            if (document.activeElement && document.activeElement.blur) {
+                document.activeElement.blur();
+            }
+            // For mobile devices, also scroll to hide virtual keyboard
+            if (window.scrollY === 0) {
+                window.scrollTo(0, 1);
+                setTimeout(() => window.scrollTo(0, 0), 100);
+            }
         }
         
         // Function to load CSV data
@@ -613,6 +789,127 @@
             // Try to find field case-insensitively
             const key = Object.keys(rowData).find(k => k.toLowerCase() === fieldName.toLowerCase());
             return key ? (rowData[key] || 'Tidak ada data') : 'Tidak ada data';
+        }
+        
+        // Function to get IDPEL from current search results
+        function getIdpelFromResults() {
+            if (currentSearchResults.length === 0) return null;
+            
+            // Get IDPEL from first result
+            const firstResult = currentSearchResults[0];
+            return getFieldValue(firstResult, 'idpel');
+        }
+        
+        // Function to load and display PDF
+        async function loadPdf(idpel) {
+            const pdfModal = document.getElementById('pdfModal');
+            const pdfLoadingMessage = document.getElementById('pdfLoadingMessage');
+            const pdfViewerContainer = document.getElementById('pdfViewerContainer');
+            const pdfControls = document.getElementById('pdfControls');
+            const pdfModalTitle = document.getElementById('pdfModalTitle');
+            
+            pdfModal.style.display = 'block';
+            pdfLoadingMessage.style.display = 'block';
+            pdfControls.style.display = 'none';
+            pdfModalTitle.textContent = `Dokumen PDF - IDPEL: ${idpel}`;
+            
+            // Clear previous PDF content
+            const existingCanvases = pdfViewerContainer.querySelectorAll('.pdf-canvas');
+            existingCanvases.forEach(canvas => canvas.remove());
+            
+            try {
+                // Try different PDF naming conventions
+                const possibleNames = [
+                    `${idpel}.pdf`,
+                    `IDPEL_${idpel}.pdf`,
+                    `${idpel.toLowerCase()}.pdf`,
+                    `doc_${idpel}.pdf`
+                ];
+                
+                let pdfUrl = null;
+                for (const name of possibleNames) {
+                    try {
+                        const response = await fetch(name, { method: 'HEAD' });
+                        if (response.ok) {
+                            pdfUrl = name;
+                            break;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (!pdfUrl) {
+                    throw new Error('File PDF tidak ditemukan');
+                }
+                
+                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                currentPdfDoc = await loadingTask.promise;
+                
+                pdfLoadingMessage.style.display = 'none';
+                pdfControls.style.display = 'flex';
+                
+                currentPage = 1;
+                await renderPage(currentPage);
+                updatePageInfo();
+                
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                pdfLoadingMessage.innerHTML = `
+                    <div class="error-message">
+                        <h3>Gagal memuat PDF</h3>
+                        <p>File PDF untuk IDPEL "${idpel}" tidak ditemukan.</p>
+                        <p>Pastikan file PDF tersedia dengan nama: ${idpel}.pdf</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Function to render PDF page
+        async function renderPage(pageNumber) {
+            if (!currentPdfDoc) return;
+            
+            try {
+                const page = await currentPdfDoc.getPage(pageNumber);
+                const viewport = page.getViewport({ scale: 1.2 });
+                
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdf-canvas';
+                const context = canvas.getContext('2d');
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                
+                await page.render(renderContext).promise;
+                
+                // Clear previous canvas and add new one
+                const existingCanvases = document.querySelectorAll('.pdf-canvas');
+                existingCanvases.forEach(c => c.remove());
+                
+                document.getElementById('pdfViewerContainer').appendChild(canvas);
+                
+            } catch (error) {
+                console.error('Error rendering page:', error);
+            }
+        }
+        
+        // Function to update page info
+        function updatePageInfo() {
+            if (!currentPdfDoc) return;
+            
+            const pageInfo = document.getElementById('pageInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            pageInfo.textContent = `Halaman ${currentPage} dari ${currentPdfDoc.numPages}`;
+            
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= currentPdfDoc.numPages;
         }
         
         // Function to show detail modal
@@ -705,18 +1002,35 @@
             document.body.style.overflow = 'auto';
         }
         
+        // Function to close PDF modal
+        function closePdfModal() {
+            const pdfModal = document.getElementById('pdfModal');
+            pdfModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            
+            // Clear PDF document
+            currentPdfDoc = null;
+            currentPage = 1;
+        }
+        
         // Function to display results
         function displayResults(data, query) {
             const resultsContainer = document.getElementById('resultsContainer');
             const resultsCount = document.getElementById('resultsCount');
             const resultsSection = document.getElementById('resultsSection');
             const clickHint = document.getElementById('clickHint');
+            const pdfActions = document.getElementById('pdfActions');
             
+            currentSearchResults = data;
             resultsCount.textContent = `${data.length} data ditemukan`;
             resultsSection.style.display = 'block';
             
+            // Hide keyboard after showing results
+            setTimeout(hideKeyboard, 300);
+            
             if (data.length === 0) {
                 clickHint.style.display = 'none';
+                pdfActions.style.display = 'none';
                 resultsContainer.innerHTML = `
                     <div class="no-results">
                         <div class="no-results-icon">🔍</div>
@@ -726,6 +1040,7 @@
                 `;
             } else {
                 clickHint.style.display = 'block';
+                pdfActions.style.display = 'block';
                 let html = '<table class="results-table">';
                 html += '<thead><tr>';
                 
@@ -755,8 +1070,8 @@
             // Clear the search input after displaying results for next search
             document.getElementById('searchQuery').value = '';
             
-            // Focus back to search input for next search
-            document.getElementById('searchQuery').focus();
+            // Focus back to search input for next search when user clicks on it
+            // Removed automatic focus to keep keyboard hidden
         }
         
         // Function to show loading
@@ -764,8 +1079,10 @@
             const resultsContainer = document.getElementById('resultsContainer');
             const resultsSection = document.getElementById('resultsSection');
             const clickHint = document.getElementById('clickHint');
+            const pdfActions = document.getElementById('pdfActions');
             
             clickHint.style.display = 'none';
+            pdfActions.style.display = 'none';
             resultsContainer.innerHTML = `
                 <div class="loading">
                     <div class="loading-spinner"></div>
@@ -806,14 +1123,52 @@
             }
         });
         
+        // Show keyboard when user focuses on search input
+        document.getElementById('searchQuery').addEventListener('focus', function() {
+            // Keyboard will show automatically on mobile devices
+        });
+        
+        // PDF button event listener
+        document.getElementById('showPdfButton').addEventListener('click', function() {
+            const idpel = getIdpelFromResults();
+            if (idpel && idpel !== 'Tidak ada data') {
+                loadPdf(idpel);
+            } else {
+                alert('IDPEL tidak ditemukan dalam hasil pencarian');
+            }
+        });
+        
+        // PDF navigation event listeners
+        document.getElementById('prevPageBtn').addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPage(currentPage);
+                updatePageInfo();
+            }
+        });
+        
+        document.getElementById('nextPageBtn').addEventListener('click', function() {
+            if (currentPdfDoc && currentPage < currentPdfDoc.numPages) {
+                currentPage++;
+                renderPage(currentPage);
+                updatePageInfo();
+            }
+        });
+        
         // Modal event listeners
         document.getElementById('closeModal').addEventListener('click', closeModal);
+        document.getElementById('closePdfModal').addEventListener('click', closePdfModal);
         
         // Close modal when clicking outside
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('detailModal');
+            const pdfModal = document.getElementById('pdfModal');
+            
             if (event.target === modal) {
                 closeModal();
+            }
+            if (event.target === pdfModal) {
+                closePdfModal();
             }
         });
         
@@ -821,6 +1176,7 @@
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeModal();
+                closePdfModal();
             }
         });
         
