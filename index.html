@@ -3,56 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Viewer with Search</title>
+    <title>PDF Content Search Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
-        #pdf-viewer {
-            height: 80vh;
+        .pdf-container {
+            height: 70vh;
+            overflow-y: auto;
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
             margin-top: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        .search-highlight {
-            background-color: yellow;
+        .highlight {
+            background-color: #fef08a;
+            color: #1f2937;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+        .search-result {
+            transition: all 0.2s ease;
+        }
+        .search-result:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .page-result {
+            background: #f8fafc;
+            border-left: 3px solid #3b82f6;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .pdf-page {
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+        }
+        .page-number {
+            background: #3b82f6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: bold;
+        }
+        .context-text {
+            line-height: 1.6;
+            color: #374151;
+        }
+        .error-message {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #fecaca;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-8">
-    <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-8">
-            <div class="flex items-center justify-center mb-4">
-                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/a0b65288-2c7f-468c-9000-999ef01e6a62.png" alt="Document search application logo with magnifying glass and file icon in blue and gray tones" class="mr-4" />
-                <h1 class="text-3xl font-bold text-gray-800">PDF Document Search</h1>
-            </div>
-            <p class="text-gray-600">Search and view PDF documents from local database</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
             <div class="flex flex-col md:flex-row gap-4">
-                <input type="text" id="search-input" placeholder="Search PDF documents..." 
-                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button id="search-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                    Search
+                <div class="flex-grow">
+                    <input type="text" id="searchInput" placeholder="Search within PDF content in database folder..." 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button id="searchBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 whitespace-nowrap">
+                    Search Content
+                </button>
+                <button id="loadPDFsBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 whitespace-nowrap">
+                    Load PDFs
                 </button>
             </div>
-            <div id="search-results" class="mt-4 hidden">
-                <h3 class="font-medium text-gray-700 mb-2">Search Results:</h3>
-                <ul id="results-list" class="space-y-1"></ul>
+            <div class="mt-4 flex flex-wrap gap-4">
+                <select id="sortSelect" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="relevance">Sort by Relevance</option>
+                    <option value="matches">Sort by Match Count</option>
+                    <option value="date">Sort by Date</option>
+                    <option value="filename">Sort by Filename</option>
+                </select>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="caseSensitive" class="rounded border-gray-300">
+                    <label for="caseSensitive" class="text-sm text-gray-700">Case sensitive</label>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="wholeWords" class="rounded border-gray-300">
+                    <label for="wholeWords" class="text-sm text-gray-700">Whole words only</label>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-800">Document Viewer</h2>
-                <div id="file-info" class="text-gray-500"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">PDF Files & Search Results</h2>
+                    <div id="searchStatus" class="mb-4 text-sm text-gray-600"></div>
+                    <div id="resultsContainer" class="space-y-3">
+                        <div class="text-center py-8">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/5e86a67b-2f30-44d0-be7f-e3f0162ec54d.png" alt="PDF search interface showing documents in database folder with search functionality" class="mx-auto mb-4">
+                            <p class="text-gray-500">Click "Load PDFs" to scan database folder</p>
+                            <p class="text-gray-400 text-sm mt-2">Then enter search terms to find content</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="pdf-viewer" class="w-full">
-                <div class="h-full flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
-                    <div class="text-center p-6">
-                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/9d7b4548-4aac-4f8d-b17a-2ae006b9ee47.png" alt="Document preview placeholder with document icon and folded corner effect in light gray" class="mx-auto mb-4 rounded-lg" />
-                        <p>No document selected. Search for a PDF to view it.</p>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Document Content</h2>
+                    <div id="pdfContainer" class="pdf-container">
+                        <div class="text-center py-12">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/10dd13a7-7683-48bb-adca-f6435fe11630.png" alt="PDF content viewer showing document pages with highlighted search results and text content" class="mx-auto mb-4">
+                            <p class="text-gray-500">Select a document from search results to view content</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -60,86 +132,430 @@
     </div>
 
     <script>
-        // Database of PDF files (in the same directory)
-        const pdfDatabase = [
-            { name: "Annual Report 2023", filename: "annual_report_2023.pdf" },
-            { name: "User Manual", filename: "user_manual_v2.pdf" },
-            { name: "Project Proposal", filename: "project_proposal_q4.pdf" },
-            { name: "Policy Document", filename: "company_policies.pdf" },
-            { name: "Training Guide", filename: "employee_training_guide.pdf" }
-        ];
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+        // Global variables
+        let pdfDatabase = [];
+        let currentSearchTerm = '';
+        let isLoadingPDFs = false;
 
         // DOM elements
-        const searchInput = document.getElementById('search-input');
-        const searchBtn = document.getElementById('search-btn');
-        const searchResults = document.getElementById('search-results');
-        const resultsList = document.getElementById('results-list');
-        const pdfViewer = document.getElementById('pdf-viewer');
-        const fileInfo = document.getElementById('file-info');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loadPDFsBtn = document.getElementById('loadPDFsBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const pdfContainer = document.getElementById('pdfContainer');
+        const sortSelect = document.getElementById('sortSelect');
+        const searchStatus = document.getElementById('searchStatus');
+        const caseSensitive = document.getElementById('caseSensitive');
+        const wholeWords = document.getElementById('wholeWords');
 
-        // Function to display PDF
-        function displayPDF(filename) {
-            // In a real implementation, you would use PDF.js or similar library
-            // Here we create a simple iframe to display the PDF
-            pdfViewer.innerHTML = `
-                <iframe src="${filename}" width="100%" height="100%" style="border: none; border-radius: 0.5rem;">
-                    Your browser does not support PDFs. Please download the PDF to view it: 
-                    <a href="${filename}">Download PDF</a>
-                </iframe>
-            `;
+        // Load PDFs from database folder
+        async function loadPDFsFromFolder() {
+            if (isLoadingPDFs) return;
             
-            // Display filename
-            const pdfName = pdfDatabase.find(pdf => pdf.filename === filename)?.name || filename;
-            fileInfo.textContent = `Viewing: ${pdfName}`;
+            isLoadingPDFs = true;
+            loadPDFsBtn.disabled = true;
+            loadPDFsBtn.textContent = 'Loading...';
+            
+            searchStatus.innerHTML = '<div class="loading-spinner w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full inline-block mr-2"></div>Scanning database folder for PDF files...';
+
+            try {
+                // Try to get list of PDF files from database folder
+                const response = await fetch('database/');
+                
+                if (!response.ok) {
+                    throw new Error('Cannot access database folder. Make sure the folder exists and is accessible.');
+                }
+
+                const text = await response.text();
+                const pdfFiles = extractPDFLinks(text);
+                
+                if (pdfFiles.length === 0) {
+                    throw new Error('No PDF files found in database folder.');
+                }
+
+                // Process each PDF file
+                pdfDatabase = [];
+                let processedCount = 0;
+
+                for (const filename of pdfFiles) {
+                    try {
+                        searchStatus.innerHTML = `<div class="loading-spinner w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full inline-block mr-2"></div>Processing ${filename} (${processedCount + 1}/${pdfFiles.length})...`;
+                        
+                        const pdfData = await extractPDFContent(`database/${filename}`);
+                        pdfDatabase.push({
+                            id: processedCount + 1,
+                            filename: filename,
+                            path: `database/${filename}`,
+                            title: filename.replace('.pdf', '').replace(/[-_]/g, ' '),
+                            date: new Date().toISOString().split('T')[0], // Current date as fallback
+                            pages: Object.keys(pdfData).length,
+                            content: pdfData
+                        });
+                        processedCount++;
+                    } catch (error) {
+                        console.error(`Error processing ${filename}:`, error);
+                    }
+                }
+
+                displayPDFList();
+                searchStatus.textContent = `Loaded ${pdfDatabase.length} PDF files successfully`;
+
+            } catch (error) {
+                searchStatus.innerHTML = `<div class="error-message">${error.message}</div>`;
+                displayPDFList(); // Show fallback sample PDFs
+            }
+
+            isLoadingPDFs = false;
+            loadPDFsBtn.disabled = false;
+            loadPDFsBtn.textContent = 'Reload PDFs';
         }
 
-        // Function to search PDFs
-        function searchPDFs() {
-            const searchTerm = searchInput.value.trim().toLowerCase();
-            if (!searchTerm) {
-                searchResults.classList.add('hidden');
+        // Extract PDF file links from directory listing
+        function extractPDFLinks(html) {
+            const pdfFiles = [];
+            const linkRegex = /<a[^>]*href=["']([^"']*\.pdf)["'][^>]*>/gi;
+            let match;
+            
+            while ((match = linkRegex.exec(html)) !== null) {
+                const filename = match[1];
+                if (filename && !filename.includes('/') && !filename.includes('..')) {
+                    pdfFiles.push(filename);
+                }
+            }
+            
+            return pdfFiles;
+        }
+
+        // Extract text content from PDF
+        async function extractPDFContent(pdfPath) {
+            const pdf = await pdfjsLib.getDocument(pdfPath).promise;
+            const content = {};
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                const textItems = textContent.items.map(item => item.str).join(' ');
+                content[pageNum] = textItems;
+            }
+
+            return content;
+        }
+
+        // Display list of loaded PDFs
+        function displayPDFList() {
+            if (pdfDatabase.length === 0) {
+                // Fallback to sample PDFs if real loading failed
+                pdfDatabase = [
+                    { 
+                        id: 1, 
+                        filename: 'sample1.pdf', 
+                        path: 'database/sample1.pdf',
+                        title: 'Sample Document 1',
+                        date: '2023-10-15',
+                        pages: 5,
+                        content: {
+                            1: "Introduction to Web Development. Web development is the process of creating websites and web applications using HTML, CSS, JavaScript, and modern frameworks.",
+                            2: "HTML Fundamentals. HTML provides the structure and semantic meaning to web content through elements and attributes.",
+                            3: "CSS Styling. CSS controls the visual presentation including layouts, colors, fonts, and responsive design techniques.",
+                            4: "JavaScript Programming. JavaScript adds interactivity through DOM manipulation, event handling, and modern ES6+ features.",
+                            5: "Modern Frameworks. React, Vue.js, and Angular enable building complex single-page applications efficiently."
+                        }
+                    },
+                    { 
+                        id: 2, 
+                        filename: 'sample2.pdf', 
+                        path: 'database/sample2.pdf',
+                        title: 'Database Systems Guide',
+                        date: '2023-09-20',
+                        pages: 4,
+                        content: {
+                            1: "Database Fundamentals. Database systems store, organize, and retrieve data efficiently using structured query language.",
+                            2: "SQL Operations. Basic operations include SELECT, INSERT, UPDATE, DELETE statements for data manipulation.",
+                            3: "Database Design. Proper design involves normalization, relationships, indexes, and data integrity constraints.",
+                            4: "Performance Optimization. Query optimization, indexing strategies, and caching improve database performance."
+                        }
+                    }
+                ];
+                searchStatus.textContent = 'Using sample PDFs (database folder not accessible)';
+            }
+
+            resultsContainer.innerHTML = pdfDatabase.map(pdf => `
+                <div class="search-result bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-blue-50" 
+                     onclick="displayPDFContent(${pdf.id}, '${pdf.title}')">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-1">${pdf.title}</h3>
+                    <p class="text-gray-600 text-sm mb-2">${pdf.filename} • ${pdf.pages} pages • ${pdf.date}</p>
+                    <p class="text-gray-500 text-sm">Click to view content</p>
+                </div>
+            `).join('');
+        }
+
+        // Search within PDF content
+        function searchPDFContent(query) {
+            if (!query.trim()) {
+                displayPDFList();
+                searchStatus.textContent = pdfDatabase.length > 0 ? `${pdfDatabase.length} PDF files loaded` : '';
                 return;
             }
 
-            const results = pdfDatabase.filter(pdf => 
-                pdf.name.toLowerCase().includes(searchTerm) || 
-                pdf.filename.toLowerCase().includes(searchTerm)
-            );
-
-            resultsList.innerHTML = '';
-            
-            if (results.length === 0) {
-                resultsList.innerHTML = '<li class="text-gray-500">No documents found matching your search.</li>';
-            } else {
-                results.forEach(pdf => {
-                    const li = document.createElement('li');
-                    li.className = 'cursor-pointer hover:text-blue-600 hover:bg-blue-50 p-2 rounded';
-                    li.textContent = `${pdf.name} (${pdf.filename})`;
-                    li.addEventListener('click', () => {
-                        displayPDF(pdf.filename);
-                        searchResults.classList.add('hidden');
-                        searchInput.value = pdf.name; // Optional: fill search box with the selected name
-                    });
-                    resultsList.appendChild(li);
-                });
+            if (pdfDatabase.length === 0) {
+                searchStatus.innerHTML = '<div class="error-message">No PDF files loaded. Click "Load PDFs" first.</div>';
+                return;
             }
 
-            searchResults.classList.remove('hidden');
+            currentSearchTerm = query;
+            searchStatus.innerHTML = '<div class="loading-spinner w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full inline-block mr-2"></div>Searching PDF content...';
+
+            setTimeout(() => {
+                const results = [];
+                const isCaseSensitive = caseSensitive.checked;
+                const isWholeWords = wholeWords.checked;
+
+                pdfDatabase.forEach(pdf => {
+                    const matches = [];
+                    let totalMatches = 0;
+
+                    Object.entries(pdf.content).forEach(([pageNum, content]) => {
+                        const pageMatches = findMatches(content, query, isCaseSensitive, isWholeWords);
+                        if (pageMatches.length > 0) {
+                            matches.push({
+                                page: parseInt(pageNum),
+                                content: content,
+                                matches: pageMatches,
+                                count: pageMatches.length
+                            });
+                            totalMatches += pageMatches.length;
+                        }
+                    });
+
+                    if (totalMatches > 0) {
+                        results.push({
+                            ...pdf,
+                            searchMatches: matches,
+                            totalMatches: totalMatches,
+                            relevanceScore: calculateRelevance(matches, query)
+                        });
+                    }
+                });
+
+                displayContentResults(results);
+            }, 300);
+        }
+
+        // Find matches in text content
+        function findMatches(text, query, caseSensitive, wholeWords) {
+            let searchText = caseSensitive ? text : text.toLowerCase();
+            let searchQuery = caseSensitive ? query : query.toLowerCase();
+
+            if (wholeWords) {
+                const regex = new RegExp(`\\b${escapeRegex(searchQuery)}\\b`, caseSensitive ? 'g' : 'gi');
+                return Array.from(searchText.matchAll(regex));
+            } else {
+                const matches = [];
+                let index = searchText.indexOf(searchQuery);
+                while (index !== -1) {
+                    matches.push({ index, 0: searchQuery });
+                    index = searchText.indexOf(searchQuery, index + 1);
+                }
+                return matches;
+            }
+        }
+
+        // Escape special regex characters
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Calculate relevance score
+        function calculateRelevance(matches, query) {
+            let score = 0;
+            matches.forEach(match => {
+                score += match.count * 10;
+                score += Math.max(0, 10 - match.page);
+            });
+            return score;
+        }
+
+        // Display search results with content matches
+        function displayContentResults(results) {
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/b15d3caf-e264-4c20-bc97-022c23b03df5.png" alt="No search results found illustration showing empty search with magnifying glass" class="mx-auto mb-4">
+                        <p class="text-gray-500">No content found matching your search</p>
+                        <p class="text-gray-400 text-sm mt-2">Try different keywords or check spelling</p>
+                    </div>
+                `;
+                searchStatus.textContent = 'No results found';
+                return;
+            }
+
+            // Sort results
+            const sortBy = sortSelect.value;
+            results.sort((a, b) => {
+                switch (sortBy) {
+                    case 'relevance':
+                        return b.relevanceScore - a.relevanceScore;
+                    case 'matches':
+                        return b.totalMatches - a.totalMatches;
+                    case 'date':
+                        return new Date(b.date) - new Date(a.date);
+                    case 'filename':
+                        return a.filename.localeCompare(b.filename);
+                    default:
+                        return b.relevanceScore - a.relevanceScore;
+                }
+            });
+
+            const totalMatches = results.reduce((sum, result) => sum + result.totalMatches, 0);
+            searchStatus.textContent = `Found ${totalMatches} matches in ${results.length} document(s)`;
+
+            resultsContainer.innerHTML = results.map(pdf => `
+                <div class="search-result bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-blue-50" 
+                     onclick="displayPDFContent(${pdf.id}, '${pdf.title}')">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-1">${pdf.title}</h3>
+                    <p class="text-gray-600 text-sm mb-2">${pdf.filename} • ${pdf.pages} pages • ${pdf.date}</p>
+                    <div class="mb-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                            ${pdf.totalMatches} matches found
+                        </span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full ml-1">
+                            ${pdf.searchMatches.length} pages
+                        </span>
+                    </div>
+                    <div class="text-sm space-y-1">
+                        ${pdf.searchMatches.slice(0, 2).map(match => `
+                            <div class="page-result">
+                                <span class="page-number">Page ${match.page}</span>
+                                <p class="mt-1 text-gray-700">${getContextSnippet(match.content, currentSearchTerm, 100)}</p>
+                            </div>
+                        `).join('')}
+                        ${pdf.searchMatches.length > 2 ? `<p class="text-gray-500 text-xs">+${pdf.searchMatches.length - 2} more pages with matches</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get context snippet around search term
+        function getContextSnippet(text, searchTerm, maxLength) {
+            const lowerText = text.toLowerCase();
+            const lowerTerm = searchTerm.toLowerCase();
+            const index = lowerText.indexOf(lowerTerm);
+            
+            if (index === -1) return text.substring(0, maxLength) + '...';
+            
+            const start = Math.max(0, index - 50);
+            const end = Math.min(text.length, index + searchTerm.length + 50);
+            
+            let snippet = text.substring(start, end);
+            if (start > 0) snippet = '...' + snippet;
+            if (end < text.length) snippet = snippet + '...';
+            
+            const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+            snippet = snippet.replace(regex, '<span class="highlight">$1</span>');
+            
+            return snippet;
+        }
+
+        // Display PDF content with highlighted matches
+        function displayPDFContent(pdfId, title) {
+            const pdf = pdfDatabase.find(p => p.id === pdfId);
+            if (!pdf) return;
+
+            pdfContainer.innerHTML = `
+                <div class="p-4 text-center">
+                    <div class="loading-spinner w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading content for ${title}...</p>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const matchingPages = pdf.searchMatches || [];
+                
+                if (matchingPages.length === 0) {
+                    const allPages = Object.entries(pdf.content).map(([pageNum, content]) => ({
+                        page: parseInt(pageNum),
+                        content: content
+                    }));
+                    displayPages(allPages, title, '');
+                } else {
+                    displayPages(matchingPages, title, currentSearchTerm);
+                }
+            }, 500);
+        }
+
+        // Display PDF pages with content
+        function displayPages(pages, title, searchTerm) {
+            const highlightedPages = pages.map(page => {
+                let content = page.content;
+                if (searchTerm) {
+                    const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+                    content = content.replace(regex, '<span class="highlight">$1</span>');
+                }
+                
+                return `
+                    <div class="pdf-page">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="page-number">Page ${page.page}</span>
+                            ${page.count ? `<span class="text-xs text-blue-600">${page.count} matches</span>` : ''}
+                        </div>
+                        <div class="context-text">${content.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+            }).join('');
+
+            pdfContainer.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-lg">${title}</h3>
+                        ${searchTerm ? `<span class="text-sm text-gray-600">Showing pages with "${searchTerm}"</span>` : ''}
+                    </div>
+                    ${highlightedPages}
+                </div>
+            `;
         }
 
         // Event listeners
-        searchBtn.addEventListener('click', searchPDFs);
-        searchInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                searchPDFs();
+        loadPDFsBtn.addEventListener('click', loadPDFsFromFolder);
+        searchBtn.addEventListener('click', () => searchPDFContent(searchInput.value.trim()));
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchPDFContent(searchInput.value.trim());
+        });
+        
+        sortSelect.addEventListener('change', () => {
+            if (searchInput.value.trim()) {
+                searchPDFContent(searchInput.value.trim());
             }
         });
 
-        // Optional: display all PDFs when clicking on empty search
-        searchInput.addEventListener('focus', () => {
-            if (!searchInput.value) {
-                searchResults.classList.add('hidden');
+        caseSensitive.addEventListener('change', () => {
+            if (searchInput.value.trim()) {
+                searchPDFContent(searchInput.value.trim());
             }
+        });
+
+        wholeWords.addEventListener('change', () => {
+            if (searchInput.value.trim()) {
+                searchPDFContent(searchInput.value.trim());
+            }
+        });
+
+        // Auto-search with debounce
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (e.target.value.trim().length > 2) {
+                    searchPDFContent(e.target.value.trim());
+                }
+            }, 500);
+        });
+
+        // Load PDFs on page load
+        window.addEventListener('load', () => {
+            displayPDFList(); // Show sample PDFs initially
         });
     </script>
 </body>
