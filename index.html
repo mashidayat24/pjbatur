@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -90,6 +89,22 @@
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+        }
+        
+        .refresh-btn {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #28a745, #20a039);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
         }
         
         .loading {
@@ -237,6 +252,11 @@
             border-color: #007bff;
         }
         
+        .pdf-item.active {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
         .status-indicator {
             display: inline-block;
             width: 8px;
@@ -256,6 +276,26 @@
         .status-error {
             background-color: #dc3545;
         }
+        
+        .file-size {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -268,6 +308,7 @@
             <div class="search-container">
                 <input type="text" class="search-input" id="searchInput" placeholder="Masukkan teks yang ingin dicari...">
                 <button class="search-btn" id="searchBtn">Cari</button>
+                <button class="refresh-btn" id="refreshBtn">Refresh File</button>
             </div>
             <div id="searchStatus"></div>
         </div>
@@ -276,26 +317,9 @@
             <div class="sidebar">
                 <div id="searchResults" class="search-results">
                     <div class="pdf-list">
-                        <h3>Daftar PDF:</h3>
-                        <div class="pdf-item" data-file="database/laporan.pdf">
-                            <span class="status-indicator status-loaded"></span>
-                            Laporan Tahunan.pdf
-                        </div>
-                        <div class="pdf-item" data-file="database/panduan.pdf">
-                            <span class="status-indicator status-loaded"></span>
-                            Panduan Pengguna.pdf
-                        </div>
-                        <div class="pdf-item" data-file="database/presentasi.pdf">
-                            <span class="status-indicator status-loaded"></span>
-                            Presentasi Proyek.pdf
-                        </div>
-                        <div class="pdf-item" data-file="database/manual.pdf">
-                            <span class="status-indicator status-loaded"></span>
-                            Manual Teknis.pdf
-                        </div>
-                        <div class="pdf-item" data-file="database/proposal.pdf">
-                            <span class="status-indicator status-loaded"></span>
-                            Proposal Bisnis.pdf
+                        <h3>Daftar PDF di folder database:</h3>
+                        <div id="pdfFilesList">
+                            <div class="loading">Memuat daftar file PDF...</div>
                         </div>
                     </div>
                 </div>
@@ -304,10 +328,15 @@
             <div class="pdf-viewer">
                 <div class="pdf-controls">
                     <div class="pdf-info" id="pdfInfo">Pilih file PDF untuk ditampilkan</div>
+                    <div id="pageControls" style="display: none;">
+                        <button onclick="previousPage()">← Sebelumnya</button>
+                        <span id="pageInfo"></span>
+                        <button onclick="nextPage()">Selanjutnya →</button>
+                    </div>
                 </div>
                 <div class="pdf-container" id="pdfContainer">
                     <div class="empty-viewer">
-                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/e5ff1e3e-c7db-46d0-bb0a-5ad912291d0a.png" alt="Large PDF document icon with magnifying glass overlay indicating search functionality" />
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1621a46b-168e-46ce-bf66-c6a18a72323d.png" alt="Large PDF document icon with magnifying glass overlay indicating search functionality" />
                         <h3>PDF Viewer</h3>
                         <p>Pilih file PDF dari sidebar atau lakukan pencarian untuk melihat hasil</p>
                     </div>
@@ -320,55 +349,214 @@
         // Konfigurasi PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
-        // Data simulasi untuk PDF files (dalam implementasi nyata, ini akan diambil dari server)
-        const pdfFiles = [
-            {
-                path: 'database/laporan.pdf',
-                name: 'Laporan Tahunan.pdf',
-                content: 'Laporan tahunan menunjukkan kinerja perusahaan yang sangat baik. Pendapatan meningkat 25% dari tahun sebelumnya. Tim marketing berhasil mencapai target penjualan.'
-            },
-            {
-                path: 'database/panduan.pdf',
-                name: 'Panduan Pengguna.pdf',
-                content: 'Panduan ini berisi instruksi lengkap untuk menggunakan aplikasi. Langkah pertama adalah login dengan username dan password. Menu utama memiliki beberapa fitur penting.'
-            },
-            {
-                path: 'database/presentasi.pdf',
-                name: 'Presentasi Proyek.pdf',
-                content: 'Presentasi proyek menampilkan roadmap pengembangan sistem baru. Timeline proyek adalah 6 bulan dengan beberapa milestone penting. Budget yang dialokasikan sebesar 100 juta rupiah.'
-            },
-            {
-                path: 'database/manual.pdf',
-                name: 'Manual Teknis.pdf',
-                content: 'Manual teknis berisi spesifikasi hardware dan software yang dibutuhkan. Sistem operasi yang didukung adalah Windows 10, Linux Ubuntu. RAM minimal 8GB dan storage 500GB.'
-            },
-            {
-                path: 'database/proposal.pdf',
-                name: 'Proposal Bisnis.pdf',
-                content: 'Proposal bisnis untuk ekspansi ke pasar regional. Target market adalah UKM dengan omzet 1-5 miliar. Strategi pemasaran fokus pada digital marketing dan partnership.'
-            }
-        ];
-        
+        let pdfFiles = [];
         let searchResults = [];
-        let currentPdfIndex = 0;
+        let currentPdf = null;
+        let currentPage = 1;
+        let totalPages = 0;
+        let pdfTextCache = {};
+        
+        // Daftar file PDF yang ada di folder database
+        const defaultPdfFiles = [
+            'laporan.pdf',
+            'panduan.pdf',
+            'presentasi.pdf',
+            'manual.pdf',
+            'proposal.pdf',
+            'dokumentasi.pdf',
+            'tutorial.pdf',
+            'spesifikasi.pdf'
+        ];
         
         // Event listeners
         document.getElementById('searchBtn').addEventListener('click', performSearch);
+        document.getElementById('refreshBtn').addEventListener('click', loadPdfFiles);
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 performSearch();
             }
         });
         
-        // PDF item click handlers
-        document.querySelectorAll('.pdf-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const filePath = this.getAttribute('data-file');
-                loadPDF(filePath);
-            });
-        });
+        // Load PDF files dari folder database
+        async function loadPdfFiles() {
+            const filesList = document.getElementById('pdfFilesList');
+            filesList.innerHTML = '<div class="loading">Memuat daftar file PDF...</div>';
+            
+            pdfFiles = [];
+            
+            // Simulasi loading file dari folder database
+            for (let fileName of defaultPdfFiles) {
+                const filePath = `database/${fileName}`;
+                
+                try {
+                    // Cek apakah file exists dengan mencoba load
+                    const response = await fetch(filePath, { method: 'HEAD' });
+                    if (response.ok) {
+                        pdfFiles.push({
+                            name: fileName,
+                            path: filePath,
+                            status: 'loaded'
+                        });
+                    }
+                } catch (error) {
+                    // File tidak ditemukan atau error
+                    pdfFiles.push({
+                        name: fileName,
+                        path: filePath,
+                        status: 'error'
+                    });
+                }
+            }
+            
+            displayPdfFiles();
+        }
         
-        function performSearch() {
+        function displayPdfFiles() {
+            const filesList = document.getElementById('pdfFilesList');
+            
+            if (pdfFiles.length === 0) {
+                filesList.innerHTML = `
+                    <div class="no-results">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/8f86e53e-f140-413e-91bd-b60a5cb4a02c.png" alt="Empty folder icon indicating no PDF files found" />
+                        <p>Tidak ada file PDF ditemukan di folder database</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const filesHTML = pdfFiles.map(file => `
+                <div class="pdf-item" data-file="${file.path}" onclick="loadPdfFile('${file.path}')">
+                    <span class="status-indicator status-${file.status}"></span>
+                    <div>${file.name}</div>
+                    <div class="file-size">${file.path}</div>
+                </div>
+            `).join('');
+            
+            filesList.innerHTML = filesHTML;
+        }
+        
+        async function loadPdfFile(filePath) {
+            // Remove active class from all items
+            document.querySelectorAll('.pdf-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected item
+            document.querySelector(`[data-file="${filePath}"]`).classList.add('active');
+            
+            const pdfContainer = document.getElementById('pdfContainer');
+            const pdfInfo = document.getElementById('pdfInfo');
+            
+            pdfInfo.textContent = 'Memuat PDF...';
+            pdfContainer.innerHTML = '<div class="loading">Memuat PDF...</div>';
+            
+            try {
+                const loadingTask = pdfjsLib.getDocument(filePath);
+                currentPdf = await loadingTask.promise;
+                totalPages = currentPdf.numPages;
+                currentPage = 1;
+                
+                // Cache teks dari PDF untuk pencarian
+                if (!pdfTextCache[filePath]) {
+                    await cachePdfText(filePath, currentPdf);
+                }
+                
+                renderPdfPage();
+                updatePageControls();
+                pdfInfo.textContent = `${filePath.split('/').pop()} - ${totalPages} halaman`;
+                
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                pdfContainer.innerHTML = `
+                    <div class="empty-viewer">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/b5d49480-c7a6-40fb-ad89-fc8de0d08553.png" alt="Error icon indicating PDF load failure" />
+                        <h3>Error</h3>
+                        <p>Gagal memuat PDF: ${filePath}</p>
+                        <p>Pastikan file PDF ada di folder database</p>
+                    </div>
+                `;
+                pdfInfo.textContent = 'Error memuat PDF';
+            }
+        }
+        
+        async function cachePdfText(filePath, pdf) {
+            let fullText = '';
+            const progressContainer = document.getElementById('searchStatus');
+            
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                progressContainer.innerHTML = `
+                    <div class="loading">Memproses ${filePath.split('/').pop()} - Halaman ${pageNum}/${pdf.numPages}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(pageNum / pdf.numPages) * 100}%"></div>
+                    </div>
+                `;
+                
+                try {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + ' ';
+                } catch (error) {
+                    console.error(`Error extracting text from page ${pageNum}:`, error);
+                }
+            }
+            
+            pdfTextCache[filePath] = fullText;
+            progressContainer.innerHTML = '';
+        }
+        
+        async function renderPdfPage() {
+            if (!currentPdf) return;
+            
+            const page = await currentPdf.getPage(currentPage);
+            const viewport = page.getViewport({ scale: 1.5 });
+            
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            canvas.className = 'pdf-canvas';
+            
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            
+            document.getElementById('pdfContainer').innerHTML = '';
+            document.getElementById('pdfContainer').appendChild(canvas);
+            
+            await page.render(renderContext).promise;
+        }
+        
+        function updatePageControls() {
+            const pageControls = document.getElementById('pageControls');
+            const pageInfo = document.getElementById('pageInfo');
+            
+            if (currentPdf && totalPages > 1) {
+                pageControls.style.display = 'block';
+                pageInfo.textContent = `${currentPage} / ${totalPages}`;
+            } else {
+                pageControls.style.display = 'none';
+            }
+        }
+        
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPdfPage();
+                updatePageControls();
+            }
+        }
+        
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPdfPage();
+                updatePageControls();
+            }
+        }
+        
+        async function performSearch() {
             const searchTerm = document.getElementById('searchInput').value.trim();
             if (!searchTerm) {
                 alert('Silakan masukkan kata kunci pencarian');
@@ -378,42 +566,63 @@
             document.getElementById('searchStatus').innerHTML = '<div class="loading">Mencari...</div>';
             document.getElementById('searchBtn').disabled = true;
             
-            // Simulasi delay untuk pencarian
-            setTimeout(() => {
-                searchInPDFs(searchTerm);
-            }, 500);
-        }
-        
-        function searchInPDFs(searchTerm) {
             searchResults = [];
             
-            pdfFiles.forEach((pdf, index) => {
-                const content = pdf.content.toLowerCase();
-                const term = searchTerm.toLowerCase();
-                
-                if (content.includes(term)) {
-                    // Cari konteks di sekitar kata yang ditemukan
-                    const matchIndex = content.indexOf(term);
-                    const start = Math.max(0, matchIndex - 50);
-                    const end = Math.min(content.length, matchIndex + term.length + 50);
-                    const context = pdf.content.substring(start, end);
-                    
-                    // Highlight kata yang ditemukan
-                    const highlightedContext = context.replace(
-                        new RegExp(searchTerm, 'gi'),
-                        `<span class="result-match">$&</span>`
-                    );
-                    
-                    searchResults.push({
-                        file: pdf,
-                        context: highlightedContext,
-                        page: Math.floor(Math.random() * 10) + 1 // Simulasi nomor halaman
-                    });
+            // Pastikan semua PDF sudah di-cache
+            for (let file of pdfFiles) {
+                if (file.status === 'loaded' && !pdfTextCache[file.path]) {
+                    try {
+                        const loadingTask = pdfjsLib.getDocument(file.path);
+                        const pdf = await loadingTask.promise;
+                        await cachePdfText(file.path, pdf);
+                    } catch (error) {
+                        console.error(`Error loading ${file.path} for search:`, error);
+                        continue;
+                    }
                 }
-            });
+            }
+            
+            // Lakukan pencarian di cached text
+            await searchInCachedText(searchTerm);
             
             displaySearchResults(searchTerm);
             document.getElementById('searchBtn').disabled = false;
+        }
+        
+        async function searchInCachedText(searchTerm) {
+            for (let file of pdfFiles) {
+                if (file.status !== 'loaded' || !pdfTextCache[file.path]) continue;
+                
+                const text = pdfTextCache[file.path].toLowerCase();
+                const term = searchTerm.toLowerCase();
+                
+                if (text.includes(term)) {
+                    // Cari semua kemunculan kata
+                    const regex = new RegExp(term, 'gi');
+                    const matches = text.match(regex);
+                    
+                    if (matches) {
+                        // Ambil konteks di sekitar kata pertama yang ditemukan
+                        const firstMatch = text.indexOf(term);
+                        const start = Math.max(0, firstMatch - 100);
+                        const end = Math.min(text.length, firstMatch + term.length + 100);
+                        const context = pdfTextCache[file.path].substring(start, end);
+                        
+                        // Highlight kata yang ditemukan
+                        const highlightedContext = context.replace(
+                            new RegExp(searchTerm, 'gi'),
+                            `<span class="result-match">$&</span>`
+                        );
+                        
+                        searchResults.push({
+                            file: file,
+                            context: highlightedContext,
+                            matches: matches.length,
+                            page: Math.floor(Math.random() * 10) + 1 // Simulasi halaman
+                        });
+                    }
+                }
+            }
         }
         
         function displaySearchResults(searchTerm) {
@@ -424,7 +633,7 @@
                 statusContainer.innerHTML = `<div style="color: #dc3545;">Tidak ditemukan hasil untuk "${searchTerm}"</div>`;
                 resultsContainer.innerHTML = `
                     <div class="no-results">
-                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/adb67c2c-ffd4-414b-86bc-48d0a5945ac8.png" alt="Empty search results icon with magnifying glass and question mark" />
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/b66296bf-9926-44d8-84c3-089a34acadff.png" alt="Empty search results icon with magnifying glass and question mark" />
                         <h3>Tidak Ada Hasil</h3>
                         <p>Coba gunakan kata kunci yang berbeda</p>
                     </div>
@@ -432,13 +641,13 @@
                 return;
             }
             
-            statusContainer.innerHTML = `<div style="color: #28a745;">Ditemukan ${searchResults.length} hasil untuk "${searchTerm}"</div>`;
+            statusContainer.innerHTML = `<div style="color: #28a745;">Ditemukan ${searchResults.length} file dengan "${searchTerm}"</div>`;
             
             const resultsHTML = searchResults.map((result, index) => `
                 <div class="result-item" onclick="loadSearchResult(${index})">
                     <div class="result-filename">${result.file.name}</div>
                     <div class="result-context">${result.context}</div>
-                    <div class="result-page">Halaman ${result.page}</div>
+                    <div class="result-page">${result.matches} hasil ditemukan</div>
                 </div>
             `).join('');
             
@@ -460,46 +669,12 @@
             document.querySelectorAll('.result-item')[index].classList.add('active');
             
             const result = searchResults[index];
-            loadPDF(result.file.path, result.page);
-        }
-        
-        function loadPDF(filePath, page = 1) {
-            const pdfContainer = document.getElementById('pdfContainer');
-            const pdfInfo = document.getElementById('pdfInfo');
-            
-            // Update info
-            const fileName = pdfFiles.find(pdf => pdf.path === filePath)?.name || 'Unknown';
-            pdfInfo.textContent = `${fileName} - Halaman ${page}`;
-            
-            // Simulasi loading PDF
-            pdfContainer.innerHTML = `
-                <div style="text-align: center; padding: 40px;">
-                    <div class="loading">Memuat PDF...</div>
-                </div>
-            `;
-            
-            // Simulasi delay loading
-            setTimeout(() => {
-                pdfContainer.innerHTML = `
-                    <iframe src="${filePath}#page=${page}" 
-                            style="width: 100%; height: 100%; border: none;"
-                            title="PDF Viewer">
-                        <p>Browser Anda tidak mendukung tampilan PDF. 
-                           <a href="${filePath}" target="_blank">Klik di sini untuk membuka PDF</a>
-                        </p>
-                    </iframe>
-                `;
-            }, 1000);
-        }
-        
-        // Demo data loading simulation
-        function simulateDataLoading() {
-            console.log('PDF files loaded:', pdfFiles.length);
+            loadPdfFile(result.file.path);
         }
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            simulateDataLoading();
+            loadPdfFiles();
         });
     </script>
 </body>
