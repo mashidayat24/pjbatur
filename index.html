@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -266,7 +267,7 @@
             padding: 0;
             border-radius: 15px;
             width: 90%;
-            max-width: 600px;
+            max-width: 700px;
             max-height: 80vh;
             overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
@@ -327,6 +328,27 @@
             transform: translateX(5px);
         }
         
+        .detail-item-combined {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item-combined:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateX(5px);
+        }
+        
+        .detail-sub-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
         .detail-label {
             font-weight: 600;
             color: #333;
@@ -341,6 +363,18 @@
             font-size: 1rem;
             line-height: 1.5;
             word-wrap: break-word;
+        }
+        
+        .location-combined {
+            border-left: 4px solid #27ae60;
+        }
+        
+        .tariff-combined {
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .index-combined {
+            border-left: 4px solid #f39c12;
         }
         
         @keyframes fadeIn {
@@ -411,6 +445,10 @@
             
             .modal-body {
                 padding: 20px;
+            }
+            
+            .detail-item-combined {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -566,20 +604,74 @@
             });
         }
         
+        // Function to get field value safely
+        function getFieldValue(rowData, fieldName) {
+            // Try to find field case-insensitively
+            const key = Object.keys(rowData).find(k => k.toLowerCase() === fieldName.toLowerCase());
+            return key ? (rowData[key] || 'Tidak ada data') : 'Tidak ada data';
+        }
+        
         // Function to show detail modal
         function showDetailModal(rowData) {
             const modal = document.getElementById('detailModal');
             const detailContent = document.getElementById('detailContent');
             
             let html = '';
+            
+            // Combined fields groups
+            const combinedFields = [
+                {
+                    title: 'Informasi Lokasi',
+                    fields: ['alamat', 'desa', 'kecamatan'],
+                    className: 'location-combined'
+                },
+                {
+                    title: 'Informasi Tarif',
+                    fields: ['tarif', 'daya'],
+                    className: 'tariff-combined'
+                },
+                {
+                    title: 'Informasi Index',
+                    fields: ['tarif_index', 'unitup'],
+                    className: 'index-combined'
+                }
+            ];
+            
+            // Process combined fields
+            combinedFields.forEach(group => {
+                const hasAnyData = group.fields.some(field => {
+                    const value = getFieldValue(rowData, field);
+                    return value && value !== 'Tidak ada data';
+                });
+                
+                if (hasAnyData) {
+                    html += `<div class="detail-item-combined ${group.className}">`;
+                    group.fields.forEach(field => {
+                        const value = getFieldValue(rowData, field);
+                        const displayField = csvHeaders.find(h => h.toLowerCase() === field.toLowerCase()) || field;
+                        html += `
+                            <div class="detail-sub-item">
+                                <div class="detail-label">${displayField}</div>
+                                <div class="detail-value">${value}</div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+            });
+            
+            // Process remaining individual fields
+            const processedFields = ['alamat', 'desa', 'kecamatan', 'tarif', 'daya', 'tarif_index', 'unitup'];
             csvHeaders.forEach(header => {
-                const value = rowData[header] || 'Tidak ada data';
-                html += `
-                    <div class="detail-item">
-                        <div class="detail-label">${header}</div>
-                        <div class="detail-value">${value}</div>
-                    </div>
-                `;
+                if (!processedFields.some(pf => pf.toLowerCase() === header.toLowerCase())) {
+                    const value = rowData[header] || 'Tidak ada data';
+                    html += `
+                        <div class="detail-item">
+                            <div class="detail-label">${header}</div>
+                            <div class="detail-value">${value}</div>
+                        </div>
+                    `;
+                }
             });
             
             detailContent.innerHTML = html;
