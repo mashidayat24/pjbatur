@@ -1,618 +1,194 @@
-
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Pencarian Data VKRN</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <title>PDF Search Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
     <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --light-color: #e8f1f2;
+            --dark-color: #0d1b2a;
+            --accent-color: #5c9ead;
+        }
+        
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            line-height: 1.6;
             padding: 20px;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-        }
-        
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            color: #333;
-            padding: 30px 0;
-            text-align: center;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #666;
-            font-size: 1.1rem;
-            font-weight: 400;
-        }
-        
-        .search-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            margin-bottom: 30px;
-        }
-        
-        .search-form {
             display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .search-input {
-            flex-grow: 1;
-            min-width: 300px;
-            padding: 15px 20px;
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
-            font-size: 16px;
-            background: rgba(255, 255, 255, 0.9);
-            transition: all 0.3s ease;
-        }
-        
-        .search-input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .search-button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            min-width: 120px;
-        }
-        
-        .search-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-        
-        .search-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .results-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            display: none;
-        }
-        
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .results-title {
-            color: #333;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-        
-        .results-count {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .click-hint {
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-            text-align: center;
-            border: 1px solid rgba(102, 126, 234, 0.2);
-        }
-        
-        .pdf-actions {
-            background: rgba(231, 76, 60, 0.1);
-            color: #e74c3c;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            text-align: center;
-            border: 1px solid rgba(231, 76, 60, 0.2);
-        }
-        
-        .pdf-button {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin: 5px;
-        }
-        
-        .pdf-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
-        }
-        
-        .pdf-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .results-table th {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 15px 20px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .results-table td {
-            padding: 15px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.95rem;
-        }
-        
-        .results-table tr:hover {
-            background-color: #f8f9ff;
-            cursor: pointer;
-            transform: scale(1.01);
-            transition: all 0.2s ease;
-        }
-        
-        .results-table tbody tr {
-            transition: all 0.2s ease;
-        }
-        
-        .results-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .no-results {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-        
-        .no-results-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-        
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border-left: 4px solid #c33;
-        }
-        
-        .highlight {
-            background-color: #fff3cd;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-weight: bold;
-        }
-        
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .modal-content {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
-            backdrop-filter: blur(10px);
-            margin: 5% auto;
-            padding: 0;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 700px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .modal-header {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 15px 15px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 0;
-        }
-        
-        .close {
-            color: white;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            line-height: 1;
-            transition: all 0.3s ease;
-        }
-        
-        .close:hover {
-            color: #f0f0f0;
-            transform: scale(1.1);
-        }
-        
-        .modal-body {
-            padding: 30px;
-        }
-        
-        .detail-grid {
-            display: grid;
+            flex-direction: column;
             gap: 20px;
         }
         
-        .detail-item {
-            background: rgba(255, 255, 255, 0.7);
-            padding: 15px 20px;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-            transition: all 0.3s ease;
-        }
-        
-        .detail-item:hover {
-            background: rgba(255, 255, 255, 0.9);
-            transform: translateX(5px);
-        }
-        
-        .detail-item-combined {
-            background: rgba(255, 255, 255, 0.7);
-            padding: 15px 20px;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-            transition: all 0.3s ease;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .detail-item-combined:hover {
-            background: rgba(255, 255, 255, 0.9);
-            transform: translateX(5px);
-        }
-        
-        .detail-sub-item {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .detail-label {
-            font-weight: 600;
-            color: #333;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
-        
-        .detail-value {
-            color: #555;
-            font-size: 1rem;
-            line-height: 1.5;
-            word-wrap: break-word;
-        }
-        
-        .location-combined {
-            border-left: 4px solid #27ae60;
-        }
-        
-        .tariff-combined {
-            border-left: 4px solid #e74c3c;
-        }
-        
-        .index-combined {
-            border-left: 4px solid #f39c12;
-        }
-        
-        .primary-info {
-            border-left: 4px solid #3498db;
-        }
-        
-        /* PDF Modal Styles */
-        .pdf-modal {
-            display: none;
-            position: fixed;
-            z-index: 1001;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .pdf-modal-content {
-            background: white;
-            margin: 2% auto;
-            padding: 0;
-            border-radius: 10px;
-            width: 95%;
-            max-width: 900px;
-            height: 90vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            animation: slideIn 0.3s ease;
-        }
-        
-        .pdf-modal-header {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        header {
+            background-color: var(--primary-color);
             color: white;
-            padding: 15px 20px;
-            border-radius: 10px 10px 0 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .search-container {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--accent-color);
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 220px);
+        }
+        
+        .file-list {
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .file-list h2 {
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 10px;
+        }
+        
+        .pdf-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: var(--light-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pdf-item:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .pdf-item.selected {
+            background-color: var(--secondary-color);
+            color: white;
         }
         
         .pdf-viewer-container {
-            flex: 1;
-            padding: 20px;
-            overflow: auto;
-            background: #f5f5f5;
-        }
-        
-        .pdf-canvas {
-            display: block;
-            margin: 0 auto 20px;
-            border: 1px solid #ddd;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .pdf-controls {
-            padding: 10px 20px;
-            background: #f8f9fa;
-            border-top: 1px solid #ddd;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .pdf-nav-button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s ease;
-        }
-        
-        .pdf-nav-button:hover:not(:disabled) {
-            background: #5a6fd8;
-        }
-        
-        .pdf-nav-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .pdf-page-info {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .pdf-search-info {
-            background: rgba(39, 174, 96, 0.1);
-            color: #27ae60;
-            padding: 15px;
+            flex-grow: 1;
+            background-color: white;
             border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(39, 174, 96, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .pdf-viewer {
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            overflow: auto;
+            position: relative;
         }
         
-        @keyframes slideIn {
-            from { 
-                opacity: 0;
-                transform: translateY(-50px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .pdf-document {
+            width: 100%;
+        }
+        
+        .pdf-page {
+            margin-bottom: 20px;
+        }
+        
+        .search-results {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .search-result-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: #f8f8f8;
+            border-left: 3px solid var(--accent-color);
+            cursor: pointer;
+        }
+        
+        .search-result-item:hover {
+            background-color: #e5f3f7;
+        }
+        
+        .search-highlight {
+            background-color: yellow;
+        }
+        
+        .no-results {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .file-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
         }
         
         @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .search-form {
+            .main-content {
                 flex-direction: column;
+                height: auto;
             }
             
-            .search-input {
-                min-width: auto;
+            .file-list {
                 width: 100%;
-            }
-            
-            .search-button {
-                width: 100%;
-            }
-            
-            .results-table {
-                font-size: 0.8rem;
-            }
-            
-            .results-table th,
-            .results-table td {
-                padding: 10px 12px;
-            }
-            
-            .results-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .modal-content {
-                width: 95%;
-                margin: 10% auto;
-                max-height: 85vh;
-            }
-            
-            .modal-header {
-                padding: 15px 20px;
-            }
-            
-            .modal-title {
-                font-size: 1.2rem;
-            }
-            
-            .modal-body {
-                padding: 20px;
-            }
-            
-            .detail-item-combined {
-                grid-template-columns: 1fr;
-            }
-            
-            .pdf-modal-content {
-                width: 98%;
-                height: 95vh;
-                margin: 1% auto;
-            }
-            
-            .pdf-controls {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .search-section,
-            .results-section {
-                padding: 20px;
-            }
-            
-            .results-table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-            
-            .modal-content {
-                width: 98%;
-                margin: 5% auto;
+                max-height: 200px;
             }
         }
     </style>
@@ -620,697 +196,311 @@
 <body>
     <div class="container">
         <header>
-            <h1>SISTEM PENCARIAN DATA VKRN</h1>
-            <p class="subtitle">Pencarian Data CSV dengan Filter Real-time</p>
+            <h1>PDF Search Viewer</h1>
+            <p>Cari dan baca konten dari file PDF Anda</p>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Cari teks dalam PDF...">
+                <button id="searchButton">Cari</button>
+                <button id="loadFilesButton">Pilih Folder PDF</button>
+            </div>
         </header>
         
-        <div class="search-section">
-            <div class="search-form">
-                <input type="text" class="search-input" placeholder="Masukkan kata kunci pencarian..." id="searchQuery">
-                <button class="search-button" id="searchButton">
-                    <span id="buttonText">Cari Data</span>
-                </button>
-            </div>
-        </div>
-        
-        <div class="results-section" id="resultsSection">
-            <div class="results-header">
-                <h2 class="results-title">Hasil Pencarian</h2>
-                <div class="results-count" id="resultsCount">0 data ditemukan</div>
-            </div>
-            <div class="click-hint" id="clickHint" style="display: none;">
-                💡 Klik pada baris tabel untuk melihat detail lengkap data
-            </div>
-            <div class="pdf-actions" id="pdfActions" style="display: none;">
-                <div style="margin-bottom: 10px;">📄 Cari dan tampilkan dokumen PDF yang sesuai dengan data hasil pencarian</div>
-                <button class="pdf-button" id="showPdfButton">Cari & Tampilkan PDF</button>
-            </div>
-            <div class="results-container" id="resultsContainer">
-                <!-- Hasil akan ditampilkan disini -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for displaying details -->
-    <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Detail Data</h2>
-                <span class="close" id="closeModal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="detail-grid" id="detailContent">
-                    <!-- Detail content will be inserted here -->
+        <div class="main-content">
+            <div class="file-list">
+                <h2>Daftar File PDF</h2>
+                <div id="pdfList">
+                    <div class="no-results">Pilih folder yang berisi file PDF</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- PDF Modal -->
-    <div id="pdfModal" class="pdf-modal">
-        <div class="pdf-modal-content">
-            <div class="pdf-modal-header">
-                <h2 class="modal-title" id="pdfModalTitle">Dokumen PDF</h2>
-                <span class="close" id="closePdfModal">&times;</span>
-            </div>
-            <div id="pdfSearchInfo" class="pdf-search-info" style="display: none;">
-                <!-- Search matching info will be displayed here -->
-            </div>
-            <div class="pdf-viewer-container" id="pdfViewerContainer">
-                <div id="pdfLoadingMessage" class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Mencari dokumen PDF yang cocok...</p>
+            
+            <div class="pdf-viewer-container">
+                <h2 id="currentPdfTitle">PDF Viewer</h2>
+                <div class="file-actions">
+                    <div>
+                        <span id="pageInfo">Halaman: -/-</span>
+                    </div>
+                    <div>
+                        <button id="prevPage">Sebelumnya</button>
+                        <button id="nextPage">Selanjutnya</button>
+                    </div>
                 </div>
-            </div>
-            <div class="pdf-controls" id="pdfControls" style="display: none;">
-                <button class="pdf-nav-button" id="prevPageBtn">Halaman Sebelumnya</button>
-                <span class="pdf-page-info" id="pageInfo">Halaman 1 dari 1</span>
-                <button class="pdf-nav-button" id="nextPageBtn">Halaman Selanjutnya</button>
+                <div class="pdf-viewer" id="pdfViewer">
+                    <div class="no-results">Tidak ada PDF yang dipilih</div>
+                </div>
+                
+                <div id="searchResultsContainer" style="display: none;">
+                    <h3>Hasil Pencarian</h3>
+                    <div class="search-results" id="searchResults"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        let csvData = [];
-        let csvHeaders = [];
-        let currentSearchResults = [];
-        let currentPdfDoc = null;
+        // Inisialisasi PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
+        
+        let pdfDocuments = [];
+        let currentPdf = null;
         let currentPage = 1;
-        let pdfFiles = []; // Store discovered PDF files
+        let searchResults = [];
+        let currentSearchIndex = -1;
+        let directoryHandle = null;
         
-        // Set PDF.js worker
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        // DOM Elements
+        const pdfListElement = document.getElementById('pdfList');
+        const pdfViewerElement = document.getElementById('pdfViewer');
+        const currentPdfTitleElement = document.getElementById('currentPdfTitle');
+        const pageInfoElement = document.getElementById('pageInfo');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const loadFilesButton = document.getElementById('loadFilesButton');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+        const searchResultsContainer = document.getElementById('searchResultsContainer');
+        const searchResultsElement = document.getElementById('searchResults');
         
-        // Function to parse CSV
-        function parseCSV(text) {
-            const lines = text.split('\n').filter(line => line.trim() !== '');
-            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
-            const data = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-                const values = [];
-                let current = '';
-                let inQuotes = false;
-                
-                for (let j = 0; j < lines[i].length; j++) {
-                    const char = lines[i][j];
-                    
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        values.push(current.trim().replace(/"/g, ''));
-                        current = '';
-                    } else {
-                        current += char;
-                    }
-                }
-                values.push(current.trim().replace(/"/g, ''));
-                
-                if (values.length === headers.length) {
-                    const row = {};
-                    headers.forEach((header, index) => {
-                        row[header] = values[index] || '';
-                    });
-                    data.push(row);
-                }
-            }
-            
-            return { headers, data };
-        }
-        
-        // Function to hide keyboard (blur active element)
-        function hideKeyboard() {
-            if (document.activeElement && document.activeElement.blur) {
-                document.activeElement.blur();
-            }
-            // For mobile devices, also scroll to hide virtual keyboard
-            if (window.scrollY === 0) {
-                window.scrollTo(0, 1);
-                setTimeout(() => window.scrollTo(0, 0), 100);
-            }
-        }
-        
-        // Function to discover PDF files in directory
-        async function discoverPdfFiles() {
-            const commonPdfNames = [];
-            
-            // Generate common PDF naming patterns
-            for (let i = 1; i <= 100; i++) {
-                commonPdfNames.push(`${i}.pdf`);
-                commonPdfNames.push(`doc${i}.pdf`);
-                commonPdfNames.push(`document${i}.pdf`);
-                commonPdfNames.push(`file${i}.pdf`);
-            }
-            
-            // Add specific patterns based on typical IDPEL formats
-            for (let i = 1000000000; i <= 1000000020; i++) {
-                commonPdfNames.push(`${i}.pdf`);
-            }
-            
-            const foundFiles = [];
-            
-            for (const fileName of commonPdfNames) {
-                try {
-                    const response = await fetch(fileName, { method: 'HEAD' });
-                    if (response.ok) {
-                        foundFiles.push(fileName);
-                    }
-                } catch (e) {
-                    // File doesn't exist, continue
-                }
-                
-                // Limit discovery to prevent too many requests
-                if (foundFiles.length >= 50) break;
-            }
-            
-            return foundFiles;
-        }
-        
-        // Function to extract text from PDF
-        async function extractTextFromPdf(pdfUrl) {
+        // Event Listeners
+        loadFilesButton.addEventListener('click', async () => {
             try {
-                const loadingTask = pdfjsLib.getDocument(pdfUrl);
-                const pdf = await loadingTask.promise;
-                
-                let fullText = '';
-                
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
-                    fullText += pageText + ' ';
-                }
-                
-                return fullText.toLowerCase();
+                directoryHandle = await window.showDirectoryPicker();
+                await loadPdfFiles();
             } catch (error) {
-                console.error('Error extracting text from PDF:', error);
-                return '';
+                console.error('Error accessing directory:', error);
+                alert('Gagal mengakses folder. Pastikan browser mendukung fitur ini dan Anda memberikan izin yang diperlukan.');
             }
-        }
+        });
         
-        // Function to check if search data matches PDF content
-        function checkDataMatch(searchData, pdfText) {
-            const matchingFields = [];
-            const searchableFields = ['nama', 'idpel', 'alamat', 'desa', 'kecamatan', 'petugas'];
-            
-            searchableFields.forEach(field => {
-                const value = getFieldValue(searchData, field);
-                if (value && value !== 'Tidak ada data' && value.length > 2) {
-                    if (pdfText.includes(value.toLowerCase())) {
-                        matchingFields.push({ field, value });
-                    }
-                }
-            });
-            
-            return matchingFields;
-        }
+        searchButton.addEventListener('click', () => {
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm && currentPdf) {
+                searchInPdf(searchTerm);
+            }
+        });
         
-        // Function to find matching PDF for search results
-        async function findMatchingPdf() {
-            const pdfModal = document.getElementById('pdfModal');
-            const pdfLoadingMessage = document.getElementById('pdfLoadingMessage');
-            const pdfViewerContainer = document.getElementById('pdfViewerContainer');
-            const pdfControls = document.getElementById('pdfControls');
-            const pdfModalTitle = document.getElementById('pdfModalTitle');
-            const pdfSearchInfo = document.getElementById('pdfSearchInfo');
-            
-            pdfModal.style.display = 'block';
-            pdfLoadingMessage.style.display = 'block';
-            pdfControls.style.display = 'none';
-            pdfSearchInfo.style.display = 'none';
-            pdfModalTitle.textContent = 'Mencari Dokumen PDF...';
-            
-            // Clear previous PDF content
-            const existingCanvases = pdfViewerContainer.querySelectorAll('.pdf-canvas');
-            existingCanvases.forEach(canvas => canvas.remove());
-            
-            try {
-                // Get search data to match
-                if (currentSearchResults.length === 0) {
-                    throw new Error('Tidak ada hasil pencarian untuk dicocokkan');
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const searchTerm = searchInput.value.trim();
+                if (searchTerm && currentPdf) {
+                    searchInPdf(searchTerm);
                 }
-                
-                const searchData = currentSearchResults[0]; // Use first result for matching
-                
-                // Discover PDF files if not already done
-                if (pdfFiles.length === 0) {
-                    pdfLoadingMessage.querySelector('p').textContent = 'Mencari file PDF di direktori...';
-                    pdfFiles = await discoverPdfFiles();
-                }
-                
-                if (pdfFiles.length === 0) {
-                    throw new Error('Tidak ada file PDF ditemukan di direktori');
-                }
-                
-                let bestMatch = null;
-                let bestMatchScore = 0;
-                let bestMatchInfo = [];
-                
-                pdfLoadingMessage.querySelector('p').textContent = `Memeriksa ${pdfFiles.length} file PDF...`;
-                
-                // Check each PDF for matching content
-                for (const pdfFile of pdfFiles) {
-                    try {
-                        const pdfText = await extractTextFromPdf(pdfFile);
-                        const matches = checkDataMatch(searchData, pdfText);
-                        
-                        if (matches.length > bestMatchScore) {
-                            bestMatch = pdfFile;
-                            bestMatchScore = matches.length;
-                            bestMatchInfo = matches;
-                        }
-                        
-                        // If we find a very good match, break early
-                        if (matches.length >= 3) {
-                            break;
-                        }
-                    } catch (error) {
-                        console.error(`Error processing ${pdfFile}:`, error);
-                        continue;
-                    }
-                }
-                
-                if (!bestMatch || bestMatchScore === 0) {
-                    throw new Error('Tidak ditemukan PDF yang cocok dengan data pencarian');
-                }
-                
-                // Load and display the best matching PDF
-                pdfLoadingMessage.querySelector('p').textContent = 'Memuat dokumen PDF...';
-                
-                const loadingTask = pdfjsLib.getDocument(bestMatch);
-                currentPdfDoc = await loadingTask.promise;
-                
-                pdfLoadingMessage.style.display = 'none';
-                pdfControls.style.display = 'flex';
-                pdfSearchInfo.style.display = 'block';
-                
-                // Display matching information
-                let matchInfo = `📄 <strong>File:</strong> ${bestMatch}<br>`;
-                matchInfo += `✅ <strong>Data yang cocok:</strong> `;
-                matchInfo += bestMatchInfo.map(match => `<strong>${match.field}:</strong> ${match.value}`).join(', ');
-                
-                pdfSearchInfo.innerHTML = matchInfo;
-                pdfModalTitle.textContent = `Dokumen PDF - ${bestMatch}`;
-                
-                currentPage = 1;
-                await renderPage(currentPage);
+            }
+        });
+        
+        prevPageButton.addEventListener('click', () => {
+            if (currentPdf && currentPage > 1) {
+                currentPage--;
+                renderPage();
                 updatePageInfo();
-                
-            } catch (error) {
-                console.error('Error finding matching PDF:', error);
-                pdfLoadingMessage.innerHTML = `
-                    <div class="error-message">
-                        <h3>Gagal menemukan PDF yang cocok</h3>
-                        <p>${error.message}</p>
-                        <p>Pastikan ada file PDF di direktori yang sama dengan aplikasi ini.</p>
-                    </div>
-                `;
             }
-        }
+        });
         
-        // Function to load CSV data
-        async function loadCSVData() {
-            try {
-                const response = await fetch('vkrn.csv');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const text = await response.text();
-                const parsed = parseCSV(text);
-                csvHeaders = parsed.headers;
-                csvData = parsed.data;
-                
-                console.log('Data loaded successfully:', csvData.length, 'rows');
-                document.getElementById('searchButton').disabled = false;
-                document.getElementById('buttonText').textContent = 'Cari Data';
-            } catch (error) {
-                console.error('Error loading CSV:', error);
-                showError('Gagal memuat file vkrn.csv. Pastikan file berada di folder yang sama.');
+        nextPageButton.addEventListener('click', () => {
+            if (currentPdf && currentPage < currentPdf.numPages) {
+                currentPage++;
+                renderPage();
+                updatePageInfo();
             }
-        }
+        });
         
-        // Function to show error
-        function showError(message) {
-            const resultsContainer = document.getElementById('resultsContainer');
-            resultsContainer.innerHTML = `<div class="error-message">${message}</div>`;
-            document.getElementById('resultsSection').style.display = 'block';
-        }
-        
-        // Function to highlight search terms
-        function highlightText(text, query) {
-            if (!query || !text) return text;
-            const regex = new RegExp(`(${query})`, 'gi');
-            return text.toString().replace(regex, '<span class="highlight">$1</span>');
-        }
-        
-        // Function to search data
-        function searchData(query) {
-            if (!query) return csvData;
+        // Functions
+        async function loadPdfFiles() {
+            pdfDocuments = [];
+            pdfListElement.innerHTML = '';
             
-            const lowerQuery = query.toLowerCase();
-            return csvData.filter(row => {
-                return Object.values(row).some(value => 
-                    value.toString().toLowerCase().includes(lowerQuery)
-                );
+            try {
+                for await (const entry of directoryHandle.values()) {
+                    if (entry.name.endsWith('.pdf')) {
+                        const fileHandle = entry;
+                        const file = await fileHandle.getFile();
+                        
+                        const reader = new FileReader();
+                        reader.onload = async function(e) {
+                            try {
+                                const typedArray = new Uint8Array(e.target.result);
+                                const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+                                
+                                pdfDocuments.push({
+                                    name: entry.name,
+                                    handle: fileHandle,
+                                    pdfDoc: pdfDoc
+                                });
+                                
+                                renderPdfList();
+                            } catch (error) {
+                                console.error('Error loading PDF:', error);
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    }
+                }
+            } catch (error) {
+                console.error('Error reading directory:', error);
+            }
+        }
+        
+        function renderPdfList() {
+            if (pdfDocuments.length === 0) {
+                pdfListElement.innerHTML = '<div class="no-results">Tidak ada file PDF yang ditemukan</div>';
+                return;
+            }
+            
+            pdfListElement.innerHTML = '';
+            pdfDocuments.forEach((pdfDoc, index) => {
+                const pdfItem = document.createElement('div');
+                pdfItem.className = 'pdf-item';
+                pdfItem.textContent = pdfDoc.name;
+                pdfItem.addEventListener('click', () => {
+                    document.querySelectorAll('.pdf-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    pdfItem.classList.add('selected');
+                    loadPdf(pdfDoc);
+                });
+                pdfListElement.appendChild(pdfItem);
             });
         }
         
-        // Function to get field value safely
-        function getFieldValue(rowData, fieldName) {
-            // Try to find field case-insensitively
-            const key = Object.keys(rowData).find(k => k.toLowerCase() === fieldName.toLowerCase());
-            return key ? (rowData[key] || 'Tidak ada data') : 'Tidak ada data';
+        async function loadPdf(pdfDoc) {
+            try {
+                currentPdf = pdfDoc.pdfDoc;
+                currentPage = 1;
+                currentPdfTitleElement.textContent = pdfDoc.name;
+                updatePageInfo();
+                await renderPage();
+                searchResultsContainer.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                pdfViewerElement.innerHTML = '<div class="no-results">Gagal memuat PDF</div>';
+            }
         }
         
-        // Function to render PDF page
-        async function renderPage(pageNumber) {
-            if (!currentPdfDoc) return;
+        async function renderPage() {
+            if (!currentPdf) return;
             
             try {
-                const page = await currentPdfDoc.getPage(pageNumber);
-                const viewport = page.getViewport({ scale: 1.2 });
+                const page = await currentPdf.getPage(currentPage);
+                const viewport = page.getViewport({ scale: 1.0 });
+                
+                // Adjust scale to fit width
+                const scale = pdfViewerElement.clientWidth / viewport.width;
+                const scaledViewport = page.getViewport({ scale });
+                
+                pdfViewerElement.innerHTML = '';
                 
                 const canvas = document.createElement('canvas');
-                canvas.className = 'pdf-canvas';
                 const context = canvas.getContext('2d');
+                canvas.height = scaledViewport.height;
+                canvas.width = scaledViewport.width;
+                pdfViewerElement.appendChild(canvas);
                 
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                
-                const renderContext = {
+                await page.render({
                     canvasContext: context,
-                    viewport: viewport
-                };
-                
-                await page.render(renderContext).promise;
-                
-                // Clear previous canvas and add new one
-                const existingCanvases = document.querySelectorAll('.pdf-canvas');
-                existingCanvases.forEach(c => c.remove());
-                
-                document.getElementById('pdfViewerContainer').appendChild(canvas);
-                
+                    viewport: scaledViewport
+                }).promise;
             } catch (error) {
                 console.error('Error rendering page:', error);
+                pdfViewerElement.innerHTML = '<div class="no-results">Gagal merender halaman PDF</div>';
             }
         }
         
-        // Function to update page info
         function updatePageInfo() {
-            if (!currentPdfDoc) return;
-            
-            const pageInfo = document.getElementById('pageInfo');
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            
-            pageInfo.textContent = `Halaman ${currentPage} dari ${currentPdfDoc.numPages}`;
-            
-            prevBtn.disabled = currentPage <= 1;
-            nextBtn.disabled = currentPage >= currentPdfDoc.numPages;
+            if (currentPdf) {
+                pageInfoElement.textContent = `Halaman: ${currentPage}/${currentPdf.numPages}`;
+            } else {
+                pageInfoElement.textContent = 'Halaman: -/-';
+            }
         }
         
-        // Function to show detail modal
-        function showDetailModal(rowData) {
-            const modal = document.getElementById('detailModal');
-            const detailContent = document.getElementById('detailContent');
+        async function searchInPdf(searchTerm) {
+            if (!currentPdf) return;
             
-            let html = '';
+            searchResults = [];
+            searchResultsElement.innerHTML = '';
+            searchResultsContainer.style.display = 'block';
             
-            // Define the specific order for displaying details
-            const fieldOrder = [
-                { field: 'nama', label: 'Nama Pelanggan', className: 'primary-info' },
-                { field: 'alamat', label: 'Alamat', combined: ['alamat', 'desa', 'kecamatan'], className: 'location-combined' },
-                { field: 'idpel', label: 'ID Pelanggan', className: 'primary-info' },
-                { field: 'petugas', label: 'Petugas', className: 'primary-info' },
-                { field: 'nomer_meter_lama', label: 'Nomor Meter Lama', className: 'primary-info' },
-                { field: 'nomer_meter_baru', label: 'Nomor Meter Baru', className: 'primary-info' },
-                { field: 'tarif', label: 'Tarif & Daya', combined: ['tarif', 'daya'], className: 'tariff-combined' },
-                { field: 'tarif_index', label: 'Tarif Index & Unit UP', combined: ['tarif_index', 'unitup'], className: 'index-combined' }
-            ];
-            
-            const processedFields = [];
-            
-            // Process ordered fields
-            fieldOrder.forEach(item => {
-                if (item.combined) {
-                    // Handle combined fields
-                    const hasAnyData = item.combined.some(field => {
-                        const value = getFieldValue(rowData, field);
-                        return value && value !== 'Tidak ada data';
+            try {
+                // Search in all pages
+                for (let i = 1; i <= currentPdf.numPages; i++) {
+                    const page = await currentPdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const text = textContent.items.map(item => item.str).join(' ');
+                    
+                    if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        // Find all occurrences
+                        const regex = new RegExp(searchTerm, 'gi');
+                        let match;
+                        while ((match = regex.exec(text)) !== null) {
+                            searchResults.push({
+                                page: i,
+                                position: match.index,
+                                text: match[0]
+                            });
+                        }
+                    }
+                }
+                
+                if (searchResults.length === 0) {
+                    searchResultsElement.innerHTML = '<div class="no-results">Tidak ditemukan hasil pencarian</div>';
+                    return;
+                }
+                
+                // Display search results
+                searchResults.forEach((result, index) => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'search-result-item';
+                    
+                    const previewText = result.position < 20 
+                        ? `..."${result.text}"` + result.text.substr(20, 50) + "..."
+                        : "..." + text.substr(result.position - 20, 50) + `"${result.text}"` + "...";
+                    
+                    resultItem.innerHTML = `
+                        <strong>Halaman ${result.page}:</strong> ${previewText}
+                    `;
+                    
+                    resultItem.addEventListener('click', () => {
+                        currentPage = result.page;
+                        renderPage();
+                        updatePageInfo();
+                        highlightSearchTerm(searchTerm);
+                        currentSearchIndex = index;
+                        scrollToHighlight();
                     });
                     
-                    if (hasAnyData) {
-                        html += `<div class="detail-item-combined ${item.className}">`;
-                        item.combined.forEach(field => {
-                            const value = getFieldValue(rowData, field);
-                            const displayField = csvHeaders.find(h => h.toLowerCase() === field.toLowerCase()) || field;
-                            html += `
-                                <div class="detail-sub-item">
-                                    <div class="detail-label">${displayField}</div>
-                                    <div class="detail-value">${value}</div>
-                                </div>
-                            `;
-                            processedFields.push(field.toLowerCase());
-                        });
-                        html += '</div>';
-                    }
-                } else {
-                    // Handle single fields
-                    const value = getFieldValue(rowData, item.field);
-                    if (value && value !== 'Tidak ada data') {
-                        const displayField = csvHeaders.find(h => h.toLowerCase() === item.field.toLowerCase()) || item.label;
-                        html += `
-                            <div class="detail-item ${item.className}">
-                                <div class="detail-label">${displayField}</div>
-                                <div class="detail-value">${value}</div>
-                            </div>
-                        `;
-                        processedFields.push(item.field.toLowerCase());
-                    }
-                }
-            });
-            
-            // Process remaining fields that weren't in the ordered list
-            csvHeaders.forEach(header => {
-                if (!processedFields.includes(header.toLowerCase())) {
-                    const value = rowData[header] || 'Tidak ada data';
-                    if (value && value !== 'Tidak ada data') {
-                        html += `
-                            <div class="detail-item">
-                                <div class="detail-label">${header}</div>
-                                <div class="detail-value">${value}</div>
-                            </div>
-                        `;
-                    }
-                }
-            });
-            
-            detailContent.innerHTML = html;
-            modal.style.display = 'block';
-            
-            // Prevent body scroll when modal is open
-            document.body.style.overflow = 'hidden';
-        }
-        
-        // Function to close modal
-        function closeModal() {
-            const modal = document.getElementById('detailModal');
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-        
-        // Function to close PDF modal
-        function closePdfModal() {
-            const pdfModal = document.getElementById('pdfModal');
-            pdfModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            
-            // Clear PDF document
-            currentPdfDoc = null;
-            currentPage = 1;
-        }
-        
-        // Function to display results
-        function displayResults(data, query) {
-            const resultsContainer = document.getElementById('resultsContainer');
-            const resultsCount = document.getElementById('resultsCount');
-            const resultsSection = document.getElementById('resultsSection');
-            const clickHint = document.getElementById('clickHint');
-            const pdfActions = document.getElementById('pdfActions');
-            
-            currentSearchResults = data;
-            resultsCount.textContent = `${data.length} data ditemukan`;
-            resultsSection.style.display = 'block';
-            
-            // Hide keyboard after showing results
-            setTimeout(hideKeyboard, 300);
-            
-            if (data.length === 0) {
-                clickHint.style.display = 'none';
-                pdfActions.style.display = 'none';
-                resultsContainer.innerHTML = `
-                    <div class="no-results">
-                        <div class="no-results-icon">🔍</div>
-                        <h3>Tidak ada data yang ditemukan</h3>
-                        <p>Coba gunakan kata kunci yang berbeda</p>
-                    </div>
-                `;
-            } else {
-                clickHint.style.display = 'block';
-                pdfActions.style.display = 'block';
-                let html = '<table class="results-table">';
-                html += '<thead><tr>';
-                
-                csvHeaders.forEach(header => {
-                    html += `<th>${header}</th>`;
+                    searchResultsElement.appendChild(resultItem);
                 });
                 
-                html += '</tr></thead><tbody>';
-                
-                data.forEach((row, index) => {
-                    html += `<tr onclick="showDetailModal(${JSON.stringify(row).replace(/"/g, '&quot;')})">`;
-                    csvHeaders.forEach(header => {
-                        const cellValue = row[header] || '';
-                        const highlightedValue = query ? highlightText(cellValue, query) : cellValue;
-                        html += `<td>${highlightedValue}</td>`;
-                    });
-                    html += '</tr>';
-                });
-                
-                html += '</tbody></table>';
-                resultsContainer.innerHTML = html;
-                
-                // Store data for click events (alternative approach)
-                resultsContainer.dataset.searchResults = JSON.stringify(data);
+            } catch (error) {
+                console.error('Error searching PDF:', error);
+                searchResultsElement.innerHTML = '<div class="no-results">Gagal melakukan pencarian</div>';
             }
-            
-            // Clear the search input after displaying results for next search
-            document.getElementById('searchQuery').value = '';
         }
         
-        // Function to show loading
-        function showLoading() {
-            const resultsContainer = document.getElementById('resultsContainer');
-            const resultsSection = document.getElementById('resultsSection');
-            const clickHint = document.getElementById('clickHint');
-            const pdfActions = document.getElementById('pdfActions');
+        function highlightSearchTerm(term) {
+            if (!currentPdf) return;
             
-            clickHint.style.display = 'none';
-            pdfActions.style.display = 'none';
-            resultsContainer.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Mencari data...</p>
-                </div>
-            `;
-            resultsSection.style.display = 'block';
-        }
-        
-        // Event listeners
-        document.getElementById('searchButton').addEventListener('click', function() {
-            const searchInput = document.getElementById('searchQuery');
-            const query = searchInput.value.trim();
+            const textDivs = pdfViewerElement.querySelectorAll('.textLayer div');
+            const regex = new RegExp(term, 'gi');
             
-            if (csvData.length === 0) {
-                showError('Data belum dimuat. Silakan refresh halaman.');
-                return;
-            }
-            
-            if (!query) {
-                alert('Silakan masukkan kata kunci pencarian');
-                return;
-            }
-            
-            showLoading();
-            
-            // Simulate loading delay for better UX
-            setTimeout(() => {
-                const results = searchData(query);
-                displayResults(results, query);
-            }, 500);
-        });
-        
-        // Search on Enter key press
-        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('searchButton').click();
-            }
-        });
-        
-        // Show keyboard when user focuses on search input
-        document.getElementById('searchQuery').addEventListener('focus', function() {
-            // Keyboard will show automatically on mobile devices
-        });
-        
-        // PDF button event listener
-        document.getElementById('showPdfButton').addEventListener('click', function() {
-            if (currentSearchResults.length > 0) {
-                findMatchingPdf();
-            } else {
-                alert('Tidak ada data pencarian untuk mencocokkan PDF');
-            }
-        });
-        
-        // PDF navigation event listeners
-        document.getElementById('prevPageBtn').addEventListener('click', function() {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPage(currentPage);
-                updatePageInfo();
-            }
-        });
-        
-        document.getElementById('nextPageBtn').addEventListener('click', function() {
-            if (currentPdfDoc && currentPage < currentPdfDoc.numPages) {
-                currentPage++;
-                renderPage(currentPage);
-                updatePageInfo();
-            }
-        });
-        
-        // Modal event listeners
-        document.getElementById('closeModal').addEventListener('click', closeModal);
-        document.getElementById('closePdfModal').addEventListener('click', closePdfModal);
-        
-        // Close modal when clicking outside
-        window.addEventListener('click', function(event) {
-            const modal = document.getElementById('detailModal');
-            const pdfModal = document.getElementById('pdfModal');
-            
-            if (event.target === modal) {
-                closeModal();
-            }
-            if (event.target === pdfModal) {
-                closePdfModal();
-            }
-        });
-        
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-                closePdfModal();
-            }
-        });
-        
-        // Alternative approach for row click events using event delegation
-        document.getElementById('resultsContainer').addEventListener('click', function(e) {
-            const row = e.target.closest('tr');
-            if (row && row.parentElement.tagName === 'TBODY') {
-                const rowIndex = Array.from(row.parentElement.children).indexOf(row);
-                const searchResults = JSON.parse(this.dataset.searchResults || '[]');
-                if (searchResults[rowIndex]) {
-                    showDetailModal(searchResults[rowIndex]);
+            textDivs.forEach(div => {
+                const text = div.textContent;
+                if (text.match(regex)) {
+                    div.innerHTML = text.replace(regex, match => 
+                        `<span class="search-highlight">${match}</span>`
+                    );
                 }
-            }
-        });
+            });
+        }
         
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('searchButton').disabled = true;
-            document.getElementById('buttonText').textContent = 'Memuat Data...';
-            loadCSVData();
-        });
+        function scrollToHighlight() {
+            const highlights = pdfViewerElement.querySelectorAll('.search-highlight');
+            if (highlights.length > 0 && currentSearchIndex >= 0 && currentSearchIndex < highlights.length) {
+                highlights[currentSearchIndex].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
     </script>
 </body>
 </html>
