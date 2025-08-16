@@ -3,342 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Viewer dengan Pencarian</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <title>PDF Viewer with Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 300;
-        }
-        
-        .search-section {
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .search-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .search-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e9ecef;
-            border-radius: 25px;
-            font-size: 16px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        
-        .search-input:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-        }
-        
-        .search-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .search-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
-        }
-        
-        .search-btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .refresh-btn {
-            padding: 12px 16px;
-            background: linear-gradient(135deg, #28a745, #20a039);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-        }
-        
-        .loading {
-            text-align: center;
-            color: #6c757d;
-            font-style: italic;
-        }
-        
-        .main-content {
-            display: flex;
+        #pdf-viewer {
             height: 80vh;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
-        .sidebar {
-            width: 350px;
-            background-color: #f8f9fa;
-            border-right: 1px solid #dee2e6;
-            overflow-y: auto;
-        }
-        
-        .search-results {
-            padding: 20px;
-        }
-        
-        .result-item {
-            background: white;
-            margin-bottom: 15px;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #007bff;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .result-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-        }
-        
-        .result-item.active {
-            background-color: #e3f2fd;
-            border-left-color: #2196f3;
-        }
-        
-        .result-filename {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
-        
-        .result-context {
-            font-size: 14px;
-            color: #6c757d;
-            line-height: 1.4;
-        }
-        
-        .result-match {
-            background-color: #fff3cd;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-weight: 600;
-        }
-        
-        .result-page {
-            font-size: 12px;
-            color: #007bff;
-            margin-top: 5px;
-        }
-        
-        .pdf-viewer {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .pdf-controls {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .pdf-info {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .pdf-container {
-            flex: 1;
-            background-color: #525659;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: auto;
-        }
-        
-        .pdf-canvas {
-            max-width: 100%;
-            max-height: 100%;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-        }
-        
-        .no-results {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-        }
-        
-        .no-results img {
-            width: 120px;
-            margin-bottom: 20px;
-            opacity: 0.7;
-        }
-        
-        .empty-viewer {
-            text-align: center;
-            color: #6c757d;
-        }
-        
-        .empty-viewer img {
-            width: 150px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-        
-        .pdf-list {
-            padding: 20px;
-        }
-        
-        .pdf-item {
-            background: white;
-            margin-bottom: 10px;
-            padding: 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-        }
-        
-        .pdf-item:hover {
-            background-color: #f8f9fa;
-            border-color: #007bff;
-        }
-        
-        .pdf-item.active {
-            background-color: #e3f2fd;
-            border-color: #2196f3;
-        }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .status-loaded {
-            background-color: #28a745;
-        }
-        
-        .status-loading {
-            background-color: #ffc107;
-        }
-        
-        .status-error {
-            background-color: #dc3545;
-        }
-        
-        .file-size {
-            font-size: 11px;
-            color: #999;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background-color: #e9ecef;
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #007bff, #0056b3);
-            transition: width 0.3s ease;
+        .search-highlight {
+            background-color: yellow;
+            font-weight: bold;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>PDF Viewer dengan Pencarian Teks</h1>
-        </div>
-        
-        <div class="search-section">
-            <div class="search-container">
-                <input type="text" class="search-input" id="searchInput" placeholder="Masukkan teks yang ingin dicari...">
-                <button class="search-btn" id="searchBtn">Cari</button>
-                <button class="refresh-btn" id="refreshBtn">Refresh File</button>
+<body class="bg-gray-50 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center mb-4">
+                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/a0b65288-2c7f-468c-9000-999ef01e6a62.png" alt="Document search application logo with magnifying glass and file icon in blue and gray tones" class="mr-4" />
+                <h1 class="text-3xl font-bold text-gray-800">PDF Document Search</h1>
             </div>
-            <div id="searchStatus"></div>
+            <p class="text-gray-600">Search and view PDF documents from local database</p>
         </div>
-        
-        <div class="main-content">
-            <div class="sidebar">
-                <div id="searchResults" class="search-results">
-                    <div class="pdf-list">
-                        <h3>Daftar PDF di folder database:</h3>
-                        <div id="pdfFilesList">
-                            <div class="loading">Memuat daftar file PDF...</div>
-                        </div>
-                    </div>
-                </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="search-input" placeholder="Search PDF documents..." 
+                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="search-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
+                    Search
+                </button>
             </div>
-            
-            <div class="pdf-viewer">
-                <div class="pdf-controls">
-                    <div class="pdf-info" id="pdfInfo">Pilih file PDF untuk ditampilkan</div>
-                    <div id="pageControls" style="display: none;">
-                        <button onclick="previousPage()">← Sebelumnya</button>
-                        <span id="pageInfo"></span>
-                        <button onclick="nextPage()">Selanjutnya →</button>
-                    </div>
-                </div>
-                <div class="pdf-container" id="pdfContainer">
-                    <div class="empty-viewer">
-                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1621a46b-168e-46ce-bf66-c6a18a72323d.png" alt="Large PDF document icon with magnifying glass overlay indicating search functionality" />
-                        <h3>PDF Viewer</h3>
-                        <p>Pilih file PDF dari sidebar atau lakukan pencarian untuk melihat hasil</p>
+            <div id="search-results" class="mt-4 hidden">
+                <h3 class="font-medium text-gray-700 mb-2">Search Results:</h3>
+                <ul id="results-list" class="space-y-1"></ul>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">Document Viewer</h2>
+                <div id="file-info" class="text-gray-500"></div>
+            </div>
+            <div id="pdf-viewer" class="w-full">
+                <div class="h-full flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
+                    <div class="text-center p-6">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/9d7b4548-4aac-4f8d-b17a-2ae006b9ee47.png" alt="Document preview placeholder with document icon and folded corner effect in light gray" class="mx-auto mb-4 rounded-lg" />
+                        <p>No document selected. Search for a PDF to view it.</p>
                     </div>
                 </div>
             </div>
@@ -346,335 +60,86 @@
     </div>
 
     <script>
-        // Konfigurasi PDF.js
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
-        let pdfFiles = [];
-        let searchResults = [];
-        let currentPdf = null;
-        let currentPage = 1;
-        let totalPages = 0;
-        let pdfTextCache = {};
-        
-        // Daftar file PDF yang ada di folder database
-        const defaultPdfFiles = [
-            'laporan.pdf',
-            'panduan.pdf',
-            'presentasi.pdf',
-            'manual.pdf',
-            'proposal.pdf',
-            'dokumentasi.pdf',
-            'tutorial.pdf',
-            'spesifikasi.pdf'
+        // Database of PDF files (in the same directory)
+        const pdfDatabase = [
+            { name: "Annual Report 2023", filename: "annual_report_2023.pdf" },
+            { name: "User Manual", filename: "user_manual_v2.pdf" },
+            { name: "Project Proposal", filename: "project_proposal_q4.pdf" },
+            { name: "Policy Document", filename: "company_policies.pdf" },
+            { name: "Training Guide", filename: "employee_training_guide.pdf" }
         ];
-        
+
+        // DOM elements
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const searchResults = document.getElementById('search-results');
+        const resultsList = document.getElementById('results-list');
+        const pdfViewer = document.getElementById('pdf-viewer');
+        const fileInfo = document.getElementById('file-info');
+
+        // Function to display PDF
+        function displayPDF(filename) {
+            // In a real implementation, you would use PDF.js or similar library
+            // Here we create a simple iframe to display the PDF
+            pdfViewer.innerHTML = `
+                <iframe src="${filename}" width="100%" height="100%" style="border: none; border-radius: 0.5rem;">
+                    Your browser does not support PDFs. Please download the PDF to view it: 
+                    <a href="${filename}">Download PDF</a>
+                </iframe>
+            `;
+            
+            // Display filename
+            const pdfName = pdfDatabase.find(pdf => pdf.filename === filename)?.name || filename;
+            fileInfo.textContent = `Viewing: ${pdfName}`;
+        }
+
+        // Function to search PDFs
+        function searchPDFs() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (!searchTerm) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            const results = pdfDatabase.filter(pdf => 
+                pdf.name.toLowerCase().includes(searchTerm) || 
+                pdf.filename.toLowerCase().includes(searchTerm)
+            );
+
+            resultsList.innerHTML = '';
+            
+            if (results.length === 0) {
+                resultsList.innerHTML = '<li class="text-gray-500">No documents found matching your search.</li>';
+            } else {
+                results.forEach(pdf => {
+                    const li = document.createElement('li');
+                    li.className = 'cursor-pointer hover:text-blue-600 hover:bg-blue-50 p-2 rounded';
+                    li.textContent = `${pdf.name} (${pdf.filename})`;
+                    li.addEventListener('click', () => {
+                        displayPDF(pdf.filename);
+                        searchResults.classList.add('hidden');
+                        searchInput.value = pdf.name; // Optional: fill search box with the selected name
+                    });
+                    resultsList.appendChild(li);
+                });
+            }
+
+            searchResults.classList.remove('hidden');
+        }
+
         // Event listeners
-        document.getElementById('searchBtn').addEventListener('click', performSearch);
-        document.getElementById('refreshBtn').addEventListener('click', loadPdfFiles);
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        searchBtn.addEventListener('click', searchPDFs);
+        searchInput.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') {
-                performSearch();
+                searchPDFs();
             }
         });
-        
-        // Load PDF files dari folder database
-        async function loadPdfFiles() {
-            const filesList = document.getElementById('pdfFilesList');
-            filesList.innerHTML = '<div class="loading">Memuat daftar file PDF...</div>';
-            
-            pdfFiles = [];
-            
-            // Simulasi loading file dari folder database
-            for (let fileName of defaultPdfFiles) {
-                const filePath = `database/${fileName}`;
-                
-                try {
-                    // Cek apakah file exists dengan mencoba load
-                    const response = await fetch(filePath, { method: 'HEAD' });
-                    if (response.ok) {
-                        pdfFiles.push({
-                            name: fileName,
-                            path: filePath,
-                            status: 'loaded'
-                        });
-                    }
-                } catch (error) {
-                    // File tidak ditemukan atau error
-                    pdfFiles.push({
-                        name: fileName,
-                        path: filePath,
-                        status: 'error'
-                    });
-                }
+
+        // Optional: display all PDFs when clicking on empty search
+        searchInput.addEventListener('focus', () => {
+            if (!searchInput.value) {
+                searchResults.classList.add('hidden');
             }
-            
-            displayPdfFiles();
-        }
-        
-        function displayPdfFiles() {
-            const filesList = document.getElementById('pdfFilesList');
-            
-            if (pdfFiles.length === 0) {
-                filesList.innerHTML = `
-                    <div class="no-results">
-                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/8f86e53e-f140-413e-91bd-b60a5cb4a02c.png" alt="Empty folder icon indicating no PDF files found" />
-                        <p>Tidak ada file PDF ditemukan di folder database</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            const filesHTML = pdfFiles.map(file => `
-                <div class="pdf-item" data-file="${file.path}" onclick="loadPdfFile('${file.path}')">
-                    <span class="status-indicator status-${file.status}"></span>
-                    <div>${file.name}</div>
-                    <div class="file-size">${file.path}</div>
-                </div>
-            `).join('');
-            
-            filesList.innerHTML = filesHTML;
-        }
-        
-        async function loadPdfFile(filePath) {
-            // Remove active class from all items
-            document.querySelectorAll('.pdf-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add active class to selected item
-            document.querySelector(`[data-file="${filePath}"]`).classList.add('active');
-            
-            const pdfContainer = document.getElementById('pdfContainer');
-            const pdfInfo = document.getElementById('pdfInfo');
-            
-            pdfInfo.textContent = 'Memuat PDF...';
-            pdfContainer.innerHTML = '<div class="loading">Memuat PDF...</div>';
-            
-            try {
-                const loadingTask = pdfjsLib.getDocument(filePath);
-                currentPdf = await loadingTask.promise;
-                totalPages = currentPdf.numPages;
-                currentPage = 1;
-                
-                // Cache teks dari PDF untuk pencarian
-                if (!pdfTextCache[filePath]) {
-                    await cachePdfText(filePath, currentPdf);
-                }
-                
-                renderPdfPage();
-                updatePageControls();
-                pdfInfo.textContent = `${filePath.split('/').pop()} - ${totalPages} halaman`;
-                
-            } catch (error) {
-                console.error('Error loading PDF:', error);
-                pdfContainer.innerHTML = `
-                    <div class="empty-viewer">
-                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/b5d49480-c7a6-40fb-ad89-fc8de0d08553.png" alt="Error icon indicating PDF load failure" />
-                        <h3>Error</h3>
-                        <p>Gagal memuat PDF: ${filePath}</p>
-                        <p>Pastikan file PDF ada di folder database</p>
-                    </div>
-                `;
-                pdfInfo.textContent = 'Error memuat PDF';
-            }
-        }
-        
-        async function cachePdfText(filePath, pdf) {
-            let fullText = '';
-            const progressContainer = document.getElementById('searchStatus');
-            
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                progressContainer.innerHTML = `
-                    <div class="loading">Memproses ${filePath.split('/').pop()} - Halaman ${pageNum}/${pdf.numPages}</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${(pageNum / pdf.numPages) * 100}%"></div>
-                    </div>
-                `;
-                
-                try {
-                    const page = await pdf.getPage(pageNum);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
-                    fullText += pageText + ' ';
-                } catch (error) {
-                    console.error(`Error extracting text from page ${pageNum}:`, error);
-                }
-            }
-            
-            pdfTextCache[filePath] = fullText;
-            progressContainer.innerHTML = '';
-        }
-        
-        async function renderPdfPage() {
-            if (!currentPdf) return;
-            
-            const page = await currentPdf.getPage(currentPage);
-            const viewport = page.getViewport({ scale: 1.5 });
-            
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            canvas.className = 'pdf-canvas';
-            
-            const renderContext = {
-                canvasContext: context,
-                viewport: viewport
-            };
-            
-            document.getElementById('pdfContainer').innerHTML = '';
-            document.getElementById('pdfContainer').appendChild(canvas);
-            
-            await page.render(renderContext).promise;
-        }
-        
-        function updatePageControls() {
-            const pageControls = document.getElementById('pageControls');
-            const pageInfo = document.getElementById('pageInfo');
-            
-            if (currentPdf && totalPages > 1) {
-                pageControls.style.display = 'block';
-                pageInfo.textContent = `${currentPage} / ${totalPages}`;
-            } else {
-                pageControls.style.display = 'none';
-            }
-        }
-        
-        function previousPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPdfPage();
-                updatePageControls();
-            }
-        }
-        
-        function nextPage() {
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderPdfPage();
-                updatePageControls();
-            }
-        }
-        
-        async function performSearch() {
-            const searchTerm = document.getElementById('searchInput').value.trim();
-            if (!searchTerm) {
-                alert('Silakan masukkan kata kunci pencarian');
-                return;
-            }
-            
-            document.getElementById('searchStatus').innerHTML = '<div class="loading">Mencari...</div>';
-            document.getElementById('searchBtn').disabled = true;
-            
-            searchResults = [];
-            
-            // Pastikan semua PDF sudah di-cache
-            for (let file of pdfFiles) {
-                if (file.status === 'loaded' && !pdfTextCache[file.path]) {
-                    try {
-                        const loadingTask = pdfjsLib.getDocument(file.path);
-                        const pdf = await loadingTask.promise;
-                        await cachePdfText(file.path, pdf);
-                    } catch (error) {
-                        console.error(`Error loading ${file.path} for search:`, error);
-                        continue;
-                    }
-                }
-            }
-            
-            // Lakukan pencarian di cached text
-            await searchInCachedText(searchTerm);
-            
-            displaySearchResults(searchTerm);
-            document.getElementById('searchBtn').disabled = false;
-        }
-        
-        async function searchInCachedText(searchTerm) {
-            for (let file of pdfFiles) {
-                if (file.status !== 'loaded' || !pdfTextCache[file.path]) continue;
-                
-                const text = pdfTextCache[file.path].toLowerCase();
-                const term = searchTerm.toLowerCase();
-                
-                if (text.includes(term)) {
-                    // Cari semua kemunculan kata
-                    const regex = new RegExp(term, 'gi');
-                    const matches = text.match(regex);
-                    
-                    if (matches) {
-                        // Ambil konteks di sekitar kata pertama yang ditemukan
-                        const firstMatch = text.indexOf(term);
-                        const start = Math.max(0, firstMatch - 100);
-                        const end = Math.min(text.length, firstMatch + term.length + 100);
-                        const context = pdfTextCache[file.path].substring(start, end);
-                        
-                        // Highlight kata yang ditemukan
-                        const highlightedContext = context.replace(
-                            new RegExp(searchTerm, 'gi'),
-                            `<span class="result-match">$&</span>`
-                        );
-                        
-                        searchResults.push({
-                            file: file,
-                            context: highlightedContext,
-                            matches: matches.length,
-                            page: Math.floor(Math.random() * 10) + 1 // Simulasi halaman
-                        });
-                    }
-                }
-            }
-        }
-        
-        function displaySearchResults(searchTerm) {
-            const resultsContainer = document.getElementById('searchResults');
-            const statusContainer = document.getElementById('searchStatus');
-            
-            if (searchResults.length === 0) {
-                statusContainer.innerHTML = `<div style="color: #dc3545;">Tidak ditemukan hasil untuk "${searchTerm}"</div>`;
-                resultsContainer.innerHTML = `
-                    <div class="no-results">
-                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/b66296bf-9926-44d8-84c3-089a34acadff.png" alt="Empty search results icon with magnifying glass and question mark" />
-                        <h3>Tidak Ada Hasil</h3>
-                        <p>Coba gunakan kata kunci yang berbeda</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            statusContainer.innerHTML = `<div style="color: #28a745;">Ditemukan ${searchResults.length} file dengan "${searchTerm}"</div>`;
-            
-            const resultsHTML = searchResults.map((result, index) => `
-                <div class="result-item" onclick="loadSearchResult(${index})">
-                    <div class="result-filename">${result.file.name}</div>
-                    <div class="result-context">${result.context}</div>
-                    <div class="result-page">${result.matches} hasil ditemukan</div>
-                </div>
-            `).join('');
-            
-            resultsContainer.innerHTML = resultsHTML;
-            
-            // Auto-load first result
-            if (searchResults.length > 0) {
-                loadSearchResult(0);
-            }
-        }
-        
-        function loadSearchResult(index) {
-            // Remove active class from all items
-            document.querySelectorAll('.result-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add active class to selected item
-            document.querySelectorAll('.result-item')[index].classList.add('active');
-            
-            const result = searchResults[index];
-            loadPdfFile(result.file.path);
-        }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadPdfFiles();
         });
     </script>
 </body>
